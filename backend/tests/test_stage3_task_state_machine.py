@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Session, SQLModel, create_engine, select
@@ -255,3 +255,38 @@ def test_command_can_complete_from_virtual_device_source() -> None:
 
         assert task.status == DailyTaskStatus.COMPLETED
         assert study_session.command_source == CommandSource.VIRTUAL_DEVICE
+
+
+def test_device_timestamp_with_timezone_can_pause_without_datetime_mismatch() -> None:
+    with make_session() as session:
+        task_id = make_daily_task(session)
+
+        handle_command(
+            session,
+            command(
+                CommandType.START_STUDY,
+                task_id,
+                datetime(2026, 7, 1, 19, 0, tzinfo=timezone.utc),
+                source=CommandSource.DEVICE_VOICE,
+            ),
+        )
+        result = handle_command(
+            session,
+            command(
+                CommandType.PAUSE_STUDY,
+                task_id,
+                datetime(2026, 7, 1, 19, 5, tzinfo=timezone.utc),
+                source=CommandSource.DEVICE_VOICE,
+            ),
+        )
+
+        study_session = session.exec(
+            select(StudySession).where(StudySession.daily_task_id == task_id)
+        ).one()
+        study_segment = session.exec(
+            select(TimeSegment).where(TimeSegment.segment_kind == TimeSegmentKind.STUDY)
+        ).one()
+
+        assert result.task_status == DailyTaskStatus.PAUSED
+        assert study_session.effective_seconds == 5 * 60
+        assert study_segment.duration_seconds == 5 * 60

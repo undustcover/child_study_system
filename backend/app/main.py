@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, Request, WebSocket
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 
@@ -9,6 +9,7 @@ from app.core.config import settings
 from app.api.calendar_plans import router as calendar_plans_router
 from app.api.commands import router as commands_router
 from app.api.daily_tasks import router as daily_tasks_router
+from app.api.device_ws import router as device_ws_router
 from app.api.holidays import router as holidays_router
 from app.api.reminders import router as reminders_router
 from app.core.database import init_db
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     app.include_router(calendar_plans_router, prefix="/api")
     app.include_router(commands_router, prefix="/api")
     app.include_router(daily_tasks_router, prefix="/api")
+    app.include_router(device_ws_router)
     app.include_router(holidays_router, prefix="/api")
     app.include_router(reminders_router, prefix="/api")
 
@@ -42,18 +44,6 @@ def create_app() -> FastAPI:
                 "app_version": settings.app_version,
             },
         )
-
-    @app.websocket("/ws/device/{device_id}")
-    async def device_ws(websocket: WebSocket, device_id: str) -> None:
-        await websocket.accept()
-        await websocket.send_json(
-            {
-                "type": "sync_state",
-                "device_id": device_id,
-                "message": "Device WebSocket skeleton connected.",
-            }
-        )
-        await websocket.receive_text()
 
     return app
 

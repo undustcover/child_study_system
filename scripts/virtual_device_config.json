@@ -1,0 +1,131 @@
+{
+  "device": {
+    "device_id": "virtual-box3-001",
+    "device_type": "virtual_box_3",
+    "firmware_version": "virtual-0.1.0"
+  },
+  "connection": {
+    "url_template": "ws://localhost:8000/ws/device/{device_id}"
+  },
+  "intent_parser": {
+    "max_clarification_attempts": 2,
+    "clarification_timeout_seconds": 30,
+    "negation_words": [
+      "不",
+      "不是",
+      "不用",
+      "不要",
+      "别",
+      "取消",
+      "算了",
+      "先不"
+    ],
+    "commands": {
+      "START_STUDY": {
+        "phrases": [
+          "开始学习",
+          "开始",
+          "开始做题",
+          "开始写作业",
+          "我开始了",
+          "现在开始"
+        ],
+        "label": "开始学习"
+      },
+      "PAUSE_STUDY": {
+        "phrases": [
+          "暂停",
+          "暂停学习",
+          "先停一下",
+          "休息一下",
+          "等一下"
+        ],
+        "label": "暂停学习"
+      },
+      "RESUME_STUDY": {
+        "phrases": [
+          "继续",
+          "继续学习",
+          "恢复学习",
+          "接着学",
+          "我回来了"
+        ],
+        "label": "继续学习"
+      },
+      "COMPLETE_STUDY": {
+        "phrases": [
+          "完成了",
+          "做完了",
+          "写完了",
+          "学完了",
+          "结束学习",
+          "这项完成"
+        ],
+        "label": "完成学习"
+      },
+      "SKIP_TASK": {
+        "phrases": [
+          "跳过",
+          "跳过这个",
+          "今天不做这个",
+          "先不做这个"
+        ],
+        "label": "跳过任务"
+      },
+      "QUERY_CURRENT_TASK": {
+        "phrases": [
+          "现在做什么",
+          "当前任务",
+          "我在做什么",
+          "这是什么任务"
+        ],
+        "label": "查询当前任务"
+      },
+      "QUERY_TODAY_PLAN": {
+        "phrases": [
+          "今天计划",
+          "今天还有什么",
+          "今天要做什么",
+          "下一个任务",
+          "还有什么任务"
+        ],
+        "label": "查询今天计划"
+      },
+      "EXTEND_CURRENT_TASK": {
+        "phrases": [
+          "再学十分钟",
+          "延长学习",
+          "加十分钟",
+          "多学一会儿",
+          "再给我十分钟"
+        ],
+        "label": "延长学习时间"
+      },
+      "EXTEND_BREAK": {
+        "phrases": [
+          "再休息十分钟",
+          "延长休息",
+          "休息加十分钟",
+          "多休息一会儿"
+        ],
+        "label": "延长休息时间"
+      }
+    }
+  },
+  "reply_templates": {
+    "prompt": "请输入学生说的话，或输入 /quit 退出：",
+    "command_sent": "已识别：{command}，已发送到后端。",
+    "clarify": "我听到几个可能的意思：{options}。你是想说哪一个？",
+    "clarify_retry": "我还没对齐你的意思。请直接说其中一个：{options}。",
+    "clarify_abandoned": "我先不执行这句话，继续等下一句。",
+    "unrecognized": "我没听明白。你可以说“开始学习”“完成了”或“今天计划”。",
+    "negated": "我听到你是在否定或取消，所以这次不执行。你想执行哪个动作？",
+    "speak_prefix": "播报",
+    "display_state_prefix": "后端状态",
+    "sync_state_prefix": "同步状态",
+    "playback_finished": "播报完成回执已发送：{message_id}",
+    "connection_opened": "虚拟设备已连接：{url}",
+    "connection_closed": "连接已关闭。",
+    "llm_placeholder": "LLM意图识别接口已预留，阶段6默认不启用。"
+  }
+}

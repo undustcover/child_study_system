@@ -69,6 +69,11 @@ class ReminderEventStatus(StrEnum):
     CANCELLED = "cancelled"
 
 
+class DeviceType(StrEnum):
+    ESP32_S3_BOX_3 = "esp32_s3_box_3"
+    VIRTUAL_BOX_3 = "virtual_box_3"
+
+
 class ExceptionType(StrEnum):
     SKIP = "skip"
     OVERRIDE = "override"

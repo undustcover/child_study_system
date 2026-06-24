@@ -16,7 +16,10 @@ DEFAULT_EXTENSION_MINUTES = 10
 
 
 def _now(request: CommandRequest) -> dt.datetime:
-    return request.timestamp or dt.datetime.now(dt.timezone.utc)
+    current = request.timestamp or dt.datetime.now(dt.timezone.utc)
+    if current.tzinfo is not None:
+        return current.astimezone(dt.timezone.utc).replace(tzinfo=None)
+    return current
 
 
 def _touch_task(task: DailyTask, when: dt.datetime) -> None:

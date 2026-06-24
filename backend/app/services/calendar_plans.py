@@ -20,12 +20,24 @@ def _validate_date_range(start_date: date, end_date: date) -> None:
         )
 
 
+def _validate_unique_start_times(items: list[ScheduleTaskItemCreate]) -> None:
+    seen: set = set()
+    for item in items:
+        if item.planned_start_time in seen:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="schedule task items cannot share the same planned_start_time",
+            )
+        seen.add(item.planned_start_time)
+
+
 def create_schedule_plan(
     session: Session,
     student_id: int,
     payload: SchedulePlanCreate,
 ) -> SchedulePlan:
     _validate_date_range(payload.start_date, payload.end_date)
+    _validate_unique_start_times(payload.items)
     plan = SchedulePlan(
         student_id=student_id,
         name=payload.name,
@@ -107,6 +119,15 @@ def add_schedule_task_item(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="planned_end_time must be later than planned_start_time",
+        )
+    duplicate_statement = select(ScheduleTaskItem).where(
+        ScheduleTaskItem.schedule_plan_id == plan_id,
+        ScheduleTaskItem.planned_start_time == payload.planned_start_time,
+    )
+    if session.exec(duplicate_statement).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="schedule task items cannot share the same planned_start_time",
         )
 
     item = ScheduleTaskItem(schedule_plan_id=plan_id, **payload.model_dump())
