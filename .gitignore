@@ -11,3 +11,4 @@ venv/
 data/*.db
 data/*.db-*
 data/*.log
+backend/data/

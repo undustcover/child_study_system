@@ -1,6 +1,19 @@
-"""Database model package.
+"""Database model package."""
 
-The first implementation pass will add SchedulePlan, ScheduleTaskItem,
-ScheduleException, HolidayCalendar, DailyTask, StudySession, TimeSegment,
-ReminderEvent, and Device models here.
-"""
+from app.models.calendar import (
+    DailyTask,
+    HolidayCalendar,
+    ScheduleException,
+    SchedulePlan,
+    ScheduleTaskItem,
+)
+from app.models.student import Student
+
+__all__ = [
+    "DailyTask",
+    "HolidayCalendar",
+    "ScheduleException",
+    "SchedulePlan",
+    "ScheduleTaskItem",
+    "Student",
+]
