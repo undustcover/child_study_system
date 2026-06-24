@@ -1,6 +1,6 @@
 # Children Learning Planner P1-A
 
-Version: `0.01`
+Version: `V 0.0.1`
 
 P1-A is the first computer-side prototype for a student learning plan, reminder,
 timing, rest, voice execution, and statistics loop.

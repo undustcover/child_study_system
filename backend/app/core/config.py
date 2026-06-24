@@ -8,7 +8,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 class Settings(BaseSettings):
     app_name: str = "Children Learning Planner P1-A"
-    app_version: str = "0.01"
+    app_version: str = "0.0.1"
     data_dir: Path = PROJECT_ROOT / "data"
     database_url: str | None = None
 
