@@ -17,6 +17,7 @@ class DailyTaskStatus(StrEnum):
     STUDYING = "studying"
     PAUSED = "paused"
     WAITING_FINISH_CONFIRM = "waiting_finish_confirm"
+    PARENT_CONFIRM_REQUIRED = "parent_confirm_required"
     COMPLETED = "completed"
     SKIPPED = "skipped"
     OVERDUE = "overdue"
@@ -52,6 +53,20 @@ class CommandSource(StrEnum):
     VIRTUAL_DEVICE = "virtual_device"
     PARENT_WEB = "parent_web"
     SCHEDULER = "scheduler"
+
+
+class ReminderEventType(StrEnum):
+    PRE_START = "pre_start"
+    START_DUE = "start_due"
+    DELAYED_START = "delayed_start"
+    FINISH_CONFIRM = "finish_confirm"
+    BREAK_END = "break_end"
+
+
+class ReminderEventStatus(StrEnum):
+    PENDING = "pending"
+    CONSUMED = "consumed"
+    CANCELLED = "cancelled"
 
 
 class ExceptionType(StrEnum):

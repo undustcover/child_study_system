@@ -10,6 +10,7 @@ from app.api.calendar_plans import router as calendar_plans_router
 from app.api.commands import router as commands_router
 from app.api.daily_tasks import router as daily_tasks_router
 from app.api.holidays import router as holidays_router
+from app.api.reminders import router as reminders_router
 from app.core.database import init_db
 
 templates = Jinja2Templates(directory=str(Path(__file__).parent / "web" / "templates"))
@@ -29,6 +30,7 @@ def create_app() -> FastAPI:
     app.include_router(commands_router, prefix="/api")
     app.include_router(daily_tasks_router, prefix="/api")
     app.include_router(holidays_router, prefix="/api")
+    app.include_router(reminders_router, prefix="/api")
 
     @app.get("/", response_class=HTMLResponse)
     async def home(request: Request) -> HTMLResponse:

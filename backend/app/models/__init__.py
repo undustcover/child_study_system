@@ -7,12 +7,15 @@ from app.models.calendar import (
     SchedulePlan,
     ScheduleTaskItem,
 )
+from app.models.reminder import ReminderEvent, ReminderSettings
 from app.models.session import StudySession, TimeSegment
 from app.models.student import Student
 
 __all__ = [
     "DailyTask",
     "HolidayCalendar",
+    "ReminderEvent",
+    "ReminderSettings",
     "ScheduleException",
     "SchedulePlan",
     "ScheduleTaskItem",
