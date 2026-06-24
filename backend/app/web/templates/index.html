@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ app_name }}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Microsoft YaHei", "Segoe UI", Arial, sans-serif;
+        background: #f6f7f9;
+        color: #1f2933;
+      }
+
+      body {
+        margin: 0;
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 20px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 28px;
+        font-weight: 700;
+      }
+
+      .panel {
+        margin-top: 20px;
+        border: 1px solid #d9dee7;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 20px;
+      }
+
+      .status {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #25604f;
+      }
+
+      .dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        background: #2f9e6d;
+      }
+
+      code {
+        background: #eef2f7;
+        border-radius: 4px;
+        padding: 2px 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>{{ app_name }}</h1>
+      <div class="status"><span class="dot"></span>电脑端项目骨架已启动</div>
+
+      <section class="panel">
+        <h2>当前阶段</h2>
+        <p>P1-A 电脑端项目骨架。后续将加入日历计划、提醒调度、学习会话、设备协议和虚拟 BOX-3。</p>
+        <p>健康检查接口：<code>/api/health</code></p>
+        <p>版本：<code>{{ app_version }}</code></p>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,12 @@
+services:
+  backend:
+    build: .
+    container_name: children-todolist-backend
+    ports:
+      - "8000:8000"
+    environment:
+      CHILDREN_TODO_DATA_DIR: /app/data
+      CHILDREN_TODO_DATABASE_URL: sqlite:////app/data/app.db
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
