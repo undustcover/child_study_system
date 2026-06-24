@@ -79,8 +79,9 @@ may have multiple Python installations.
 
 Read these documents before continuing work in a new conversation:
 
-1. `开发/项目开发计划.md`
-2. `开发/P1-A电脑端技术规格.md`
-3. `实施方案/后端开发粗讨论.md`
-4. `实施方案/todolist-MVP实施方案.md`
-5. `构思/Todolist-MVP.md`
+1. `开发/P1-A详细开发进度表.md`
+2. `开发/项目开发计划.md`
+3. `开发/P1-A电脑端技术规格.md`
+4. `实施方案/后端开发粗讨论.md`
+5. `实施方案/todolist-MVP实施方案.md`
+6. `构思/Todolist-MVP.md`
