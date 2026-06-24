@@ -1,19 +1,13 @@
-"""Unified command handler placeholder.
+"""Unified command handler entrypoint."""
 
-All student execution commands should eventually enter this service, whether
-they come from a real BOX-3, the virtual device, scheduler events, or parent
-correction actions in the web console.
-"""
+from sqlmodel import Session
 
-SUPPORTED_COMMANDS = {
-    "START_STUDY",
-    "PAUSE_STUDY",
-    "RESUME_STUDY",
-    "COMPLETE_STUDY",
-    "SKIP_TASK",
-    "QUERY_CURRENT_TASK",
-    "QUERY_TODAY_PLAN",
-    "EXTEND_CURRENT_TASK",
-    "EXTEND_BREAK",
-    "STOP_SPEAKING",
-}
+from app.models.enums import CommandType
+from app.schemas.commands import CommandRequest, CommandResult
+from app.services.task_state_machine import process_command
+
+SUPPORTED_COMMANDS = {command.value for command in CommandType}
+
+
+def handle_command(session: Session, request: CommandRequest) -> CommandResult:
+    return process_command(session, request)

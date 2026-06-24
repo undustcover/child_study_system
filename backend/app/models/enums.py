@@ -22,6 +22,38 @@ class DailyTaskStatus(StrEnum):
     OVERDUE = "overdue"
 
 
+class StudySessionStatus(StrEnum):
+    ACTIVE = "active"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+    SKIPPED = "skipped"
+
+
+class TimeSegmentKind(StrEnum):
+    STUDY = "study"
+    BREAK = "break"
+    PAUSE = "pause"
+
+
+class CommandType(StrEnum):
+    START_STUDY = "START_STUDY"
+    PAUSE_STUDY = "PAUSE_STUDY"
+    RESUME_STUDY = "RESUME_STUDY"
+    COMPLETE_STUDY = "COMPLETE_STUDY"
+    SKIP_TASK = "SKIP_TASK"
+    QUERY_CURRENT_TASK = "QUERY_CURRENT_TASK"
+    QUERY_TODAY_PLAN = "QUERY_TODAY_PLAN"
+    EXTEND_CURRENT_TASK = "EXTEND_CURRENT_TASK"
+    EXTEND_BREAK = "EXTEND_BREAK"
+
+
+class CommandSource(StrEnum):
+    DEVICE_VOICE = "device_voice"
+    VIRTUAL_DEVICE = "virtual_device"
+    PARENT_WEB = "parent_web"
+    SCHEDULER = "scheduler"
+
+
 class ExceptionType(StrEnum):
     SKIP = "skip"
     OVERRIDE = "override"

@@ -7,6 +7,7 @@ from fastapi.templating import Jinja2Templates
 from app.api.health import router as health_router
 from app.core.config import settings
 from app.api.calendar_plans import router as calendar_plans_router
+from app.api.commands import router as commands_router
 from app.api.daily_tasks import router as daily_tasks_router
 from app.api.holidays import router as holidays_router
 from app.core.database import init_db
@@ -25,6 +26,7 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router, prefix="/api")
     app.include_router(calendar_plans_router, prefix="/api")
+    app.include_router(commands_router, prefix="/api")
     app.include_router(daily_tasks_router, prefix="/api")
     app.include_router(holidays_router, prefix="/api")
 

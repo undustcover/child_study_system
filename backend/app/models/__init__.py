@@ -7,6 +7,7 @@ from app.models.calendar import (
     SchedulePlan,
     ScheduleTaskItem,
 )
+from app.models.session import StudySession, TimeSegment
 from app.models.student import Student
 
 __all__ = [
@@ -15,5 +16,7 @@ __all__ = [
     "ScheduleException",
     "SchedulePlan",
     "ScheduleTaskItem",
+    "StudySession",
     "Student",
+    "TimeSegment",
 ]
