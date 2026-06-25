@@ -14,7 +14,7 @@ Current product direction:
 
 ## Current Stage
 
-The project is in stage 6: virtual BOX-3 device simulator.
+The project is in stage 7: parent web management console.
 
 Implemented so far:
 
@@ -24,6 +24,8 @@ Implemented so far:
 - Device WebSocket protocol
 - Virtual BOX-3 CLI simulator
 - Controlled Chinese natural-language intent parser
+- Parent console visual direction selected as option B: warm family style
+- Parent console static homepage shell
 - Docker and Docker Compose local deployment files
 - Persistent `data/` directory for SQLite
 

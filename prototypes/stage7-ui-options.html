@@ -1,0 +1,869 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>阶段7家长控制台UI原型</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+        background: #f5f6f4;
+        color: #18212a;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #f5f6f4;
+      }
+
+      .page {
+        max-width: 1500px;
+        margin: 0 auto;
+        padding: 28px 24px 56px;
+      }
+
+      .intro {
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        align-items: flex-end;
+        margin-bottom: 24px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 28px;
+        line-height: 1.25;
+      }
+
+      .intro p {
+        margin-top: 8px;
+        color: #55616d;
+        line-height: 1.7;
+        max-width: 720px;
+      }
+
+      .legend {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .chip {
+        border: 1px solid #d7ddd6;
+        background: #ffffff;
+        border-radius: 999px;
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #3f4b55;
+        white-space: nowrap;
+      }
+
+      .options {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 22px;
+      }
+
+      .option {
+        border: 1px solid #d9dfdc;
+        border-radius: 8px;
+        background: #ffffff;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 260px 1fr;
+      }
+
+      .option-header {
+        padding: 18px;
+        border-right: 1px solid #e5e9e6;
+      }
+
+      .option-header h2 {
+        font-size: 19px;
+        line-height: 1.35;
+      }
+
+      .option-header p {
+        margin-top: 6px;
+        font-size: 13px;
+        line-height: 1.6;
+        color: #63707b;
+      }
+
+      .swatches {
+        display: flex;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .swatch {
+        width: 32px;
+        height: 18px;
+        border-radius: 4px;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+      }
+
+      .mock {
+        min-height: 560px;
+        padding: 16px;
+      }
+
+      .app-shell {
+        min-height: 528px;
+        border-radius: 8px;
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        overflow: hidden;
+        border: 1px solid rgba(20, 28, 36, 0.12);
+      }
+
+      .nav {
+        padding: 18px 12px;
+      }
+
+      .brand {
+        font-size: 15px;
+        font-weight: 700;
+        line-height: 1.35;
+        margin-bottom: 22px;
+      }
+
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        height: 34px;
+        padding: 0 8px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        text-decoration: none;
+        font-size: 13px;
+      }
+
+      .main {
+        padding: 18px;
+        min-width: 0;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .topbar h3 {
+        font-size: 20px;
+        line-height: 1.3;
+      }
+
+      .topbar small {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+      }
+
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 8px;
+      }
+
+      button {
+        height: 32px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 6px;
+        border: 0;
+        padding: 0 12px;
+        font-family: inherit;
+        font-size: 13px;
+        font-weight: 600;
+        line-height: 1;
+        white-space: nowrap;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1.35fr 0.9fr;
+        gap: 14px;
+      }
+
+      .panel {
+        border-radius: 8px;
+        padding: 14px;
+        border: 1px solid rgba(20, 28, 36, 0.1);
+      }
+
+      .panel h4 {
+        margin: 0 0 12px;
+        font-size: 15px;
+      }
+
+      .task {
+        display: grid;
+        grid-template-columns: 58px 1fr auto;
+        gap: 10px;
+        align-items: center;
+        padding: 10px 0;
+        border-top: 1px solid rgba(20, 28, 36, 0.09);
+      }
+
+      .task:first-of-type {
+        border-top: 0;
+        padding-top: 0;
+      }
+
+      .time {
+        font-weight: 700;
+        font-size: 13px;
+      }
+
+      .task strong {
+        display: block;
+        font-size: 14px;
+        line-height: 1.35;
+      }
+
+      .task span,
+      .metric span,
+      .feed span {
+        display: block;
+        margin-top: 3px;
+        font-size: 12px;
+        line-height: 1.45;
+      }
+
+      .tag {
+        border-radius: 999px;
+        padding: 5px 8px;
+        font-size: 12px;
+        white-space: nowrap;
+      }
+
+      .current {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: end;
+        margin-bottom: 14px;
+      }
+
+      .current strong {
+        display: block;
+        font-size: 24px;
+        line-height: 1.25;
+      }
+
+      .current span {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+      }
+
+      .timer {
+        text-align: right;
+        font-weight: 800;
+        font-size: 26px;
+      }
+
+      .metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .metric {
+        border-radius: 7px;
+        padding: 10px;
+      }
+
+      .metric b {
+        display: block;
+        font-size: 19px;
+        line-height: 1.2;
+      }
+
+      .feed {
+        display: grid;
+        gap: 9px;
+      }
+
+      .feed-item {
+        border-radius: 7px;
+        padding: 10px;
+      }
+
+      .wide {
+        grid-column: 1 / -1;
+      }
+
+      .device-row {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+
+      .device-row div {
+        border-radius: 7px;
+        padding: 10px;
+        min-height: 58px;
+      }
+
+      .device-row b {
+        display: block;
+        font-size: 13px;
+      }
+
+      .device-row span {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+        line-height: 1.4;
+      }
+
+      .a .app-shell {
+        background: #f4f8f4;
+      }
+
+      .a .nav {
+        background: #19372f;
+        color: #f4fbf7;
+      }
+
+      .a .nav a {
+        color: #dbece5;
+      }
+
+      .a .nav a:first-of-type {
+        background: #d9f0df;
+        color: #17322b;
+      }
+
+      .a .main {
+        background: #f6faf6;
+      }
+
+      .a .topbar small,
+      .a .task span,
+      .a .current span,
+      .a .metric span,
+      .a .feed span,
+      .a .device-row span {
+        color: #5b6b65;
+      }
+
+      .a button.primary,
+      .a .tag.active {
+        background: #2f7d62;
+        color: #ffffff;
+      }
+
+      .a button.secondary {
+        background: #e2ece4;
+        color: #24463a;
+      }
+
+      .a .panel {
+        background: #ffffff;
+      }
+
+      .a .metric,
+      .a .feed-item,
+      .a .device-row div {
+        background: #edf5ef;
+      }
+
+      .a .tag {
+        background: #e7efe9;
+        color: #375346;
+      }
+
+      .b .app-shell {
+        background: #fff8f3;
+      }
+
+      .b .nav {
+        background: #fff2ea;
+        color: #312722;
+        border-right: 1px solid #ead8cc;
+      }
+
+      .b .nav a {
+        color: #6b4c3b;
+      }
+
+      .b .nav a:first-of-type {
+        background: #e85d3f;
+        color: #ffffff;
+      }
+
+      .b .main {
+        background: #fffaf6;
+      }
+
+      .b .topbar small,
+      .b .task span,
+      .b .current span,
+      .b .metric span,
+      .b .feed span,
+      .b .device-row span {
+        color: #735f53;
+      }
+
+      .b button.primary,
+      .b .tag.active {
+        background: #d94f36;
+        color: #ffffff;
+      }
+
+      .b button.secondary {
+        background: #e8f1ed;
+        color: #255345;
+      }
+
+      .b .panel {
+        background: #ffffff;
+      }
+
+      .b .metric,
+      .b .feed-item,
+      .b .device-row div {
+        background: #f8eadf;
+      }
+
+      .b .tag {
+        background: #eef3ef;
+        color: #2d5c4d;
+      }
+
+      .c .app-shell {
+        background: #f6f7fb;
+      }
+
+      .c .nav {
+        background: #ffffff;
+        color: #1d2430;
+        border-right: 1px solid #dfe4ec;
+      }
+
+      .c .nav a {
+        color: #53606f;
+      }
+
+      .c .nav a:first-of-type {
+        background: #254c7d;
+        color: #ffffff;
+      }
+
+      .c .main {
+        background: #f5f7fb;
+      }
+
+      .c .topbar small,
+      .c .task span,
+      .c .current span,
+      .c .metric span,
+      .c .feed span,
+      .c .device-row span {
+        color: #697482;
+      }
+
+      .c button.primary,
+      .c .tag.active {
+        background: #254c7d;
+        color: #ffffff;
+      }
+
+      .c button.secondary {
+        background: #e7edf3;
+        color: #244460;
+      }
+
+      .c .panel {
+        background: #ffffff;
+      }
+
+      .c .metric,
+      .c .feed-item,
+      .c .device-row div {
+        background: #eef2f7;
+      }
+
+      .c .tag {
+        background: #e9edf2;
+        color: #394b61;
+      }
+
+      .sw-a-1 {
+        background: #19372f;
+      }
+      .sw-a-2 {
+        background: #2f7d62;
+      }
+      .sw-a-3 {
+        background: #d9f0df;
+      }
+      .sw-a-4 {
+        background: #f6faf6;
+      }
+      .sw-b-1 {
+        background: #fff2ea;
+      }
+      .sw-b-2 {
+        background: #d94f36;
+      }
+      .sw-b-3 {
+        background: #2d5c4d;
+      }
+      .sw-b-4 {
+        background: #fffaf6;
+      }
+      .sw-c-1 {
+        background: #ffffff;
+      }
+      .sw-c-2 {
+        background: #254c7d;
+      }
+      .sw-c-3 {
+        background: #eef2f7;
+      }
+      .sw-c-4 {
+        background: #f5f7fb;
+      }
+
+      @media (max-width: 1200px) {
+        .mock {
+          min-height: 0;
+        }
+
+        .option {
+          grid-template-columns: 1fr;
+        }
+
+        .option-header {
+          border-right: 0;
+          border-bottom: 1px solid #e5e9e6;
+        }
+      }
+
+      @media (max-width: 720px) {
+        .page {
+          padding: 20px 14px 36px;
+        }
+
+        .intro {
+          display: block;
+        }
+
+        .legend {
+          justify-content: flex-start;
+          margin-top: 14px;
+        }
+
+        .app-shell {
+          grid-template-columns: 1fr;
+        }
+
+        .nav {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 6px;
+        }
+
+        .brand {
+          grid-column: 1 / -1;
+          margin-bottom: 4px;
+        }
+
+        .nav a {
+          margin: 0;
+          justify-content: center;
+        }
+
+        .topbar,
+        .current {
+          display: block;
+        }
+
+        .actions {
+          margin-top: 10px;
+        }
+
+        .grid,
+        .metrics,
+        .device-row {
+          grid-template-columns: 1fr;
+        }
+
+        .timer {
+          margin-top: 8px;
+          text-align: left;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="intro">
+        <div>
+          <h1>家长控制台 UI 原型选择</h1>
+          <p>三套方案使用同一批信息：今日计划、当前任务、设备状态、最近播报和待家长确认事项。这里只比较配色、层级和美观度，不代表最终功能已经开发。</p>
+        </div>
+        <div class="legend">
+          <span class="chip">本机免登录</span>
+          <span class="chip">中文界面</span>
+          <span class="chip">纠错不填原因</span>
+        </div>
+      </section>
+
+      <section class="options">
+        <article class="option a">
+          <header class="option-header">
+            <h2>方案 A：清爽自然</h2>
+            <p>绿色系、留白较多、阅读压力低，适合长期打开查看。</p>
+            <div class="swatches">
+              <span class="swatch sw-a-1"></span>
+              <span class="swatch sw-a-2"></span>
+              <span class="swatch sw-a-3"></span>
+              <span class="swatch sw-a-4"></span>
+            </div>
+          </header>
+          <div class="mock">
+            <div class="app-shell">
+              <nav class="nav">
+                <div class="brand">儿童学习<br>计划台</div>
+                <a href="#">今日</a>
+                <a href="#">日历</a>
+                <a href="#">设备</a>
+                <a href="#">统计</a>
+                <a href="#">纠错</a>
+              </nav>
+              <section class="main">
+                <div class="topbar">
+                  <div>
+                    <h3>今天的学习安排</h3>
+                    <small>6月25日 周四 · 默认学生</small>
+                  </div>
+                  <div class="actions">
+                    <button class="secondary">编辑计划</button>
+                    <button class="primary">生成今日任务</button>
+                  </div>
+                </div>
+                <div class="grid">
+                  <section class="panel">
+                    <h4>今日计划</h4>
+                    <div class="task">
+                      <div class="time">09:00</div>
+                      <div><strong>数学口算练习</strong><span>计划 25 分钟 · 提前 5 分钟提醒</span></div>
+                      <span class="tag active">进行中</span>
+                    </div>
+                    <div class="task">
+                      <div class="time">09:30</div>
+                      <div><strong>眼睛休息</strong><span>计划 10 分钟 · 自动开始休息</span></div>
+                      <span class="tag">待开始</span>
+                    </div>
+                    <div class="task">
+                      <div class="time">10:00</div>
+                      <div><strong>语文阅读</strong><span>计划 30 分钟 · 完成需语音确认</span></div>
+                      <span class="tag">待开始</span>
+                    </div>
+                  </section>
+                  <section class="panel">
+                    <h4>当前任务</h4>
+                    <div class="current">
+                      <div><strong>数学口算练习</strong><span>BOX-3 已播报，等待孩子完成确认</span></div>
+                      <div class="timer">18:42</div>
+                    </div>
+                    <div class="metrics">
+                      <div class="metric"><b>3</b><span>今日任务</span></div>
+                      <div class="metric"><b>1</b><span>已完成</span></div>
+                      <div class="metric"><b>55</b><span>计划分钟</span></div>
+                    </div>
+                  </section>
+                  <section class="panel wide">
+                    <h4>设备与播报</h4>
+                    <div class="device-row">
+                      <div><b>设备在线</b><span>virtual-box3-001 · 刚刚同步今日计划</span></div>
+                      <div><b>最近播报</b><span>现在开始数学口算练习，计划25分钟。</span></div>
+                      <div><b>待确认</b><span>无需要家长处理的事项</span></div>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            </div>
+          </div>
+        </article>
+
+        <article class="option b">
+          <header class="option-header">
+            <h2>方案 B：温暖家庭</h2>
+            <p>暖色入口更亲近，重点按钮更明显，适合轻松家庭工具氛围。</p>
+            <div class="swatches">
+              <span class="swatch sw-b-1"></span>
+              <span class="swatch sw-b-2"></span>
+              <span class="swatch sw-b-3"></span>
+              <span class="swatch sw-b-4"></span>
+            </div>
+          </header>
+          <div class="mock">
+            <div class="app-shell">
+              <nav class="nav">
+                <div class="brand">小朋友<br>学习安排</div>
+                <a href="#">今日</a>
+                <a href="#">计划</a>
+                <a href="#">设备</a>
+                <a href="#">统计</a>
+                <a href="#">纠错</a>
+              </nav>
+              <section class="main">
+                <div class="topbar">
+                  <div>
+                    <h3>今日陪伴看板</h3>
+                    <small>6月25日 周四 · 本机免登录</small>
+                  </div>
+                  <div class="actions">
+                    <button class="secondary">查看日历</button>
+                    <button class="primary">新建任务</button>
+                  </div>
+                </div>
+                <div class="grid">
+                  <section class="panel">
+                    <h4>今天要做的事</h4>
+                    <div class="task">
+                      <div class="time">09:00</div>
+                      <div><strong>数学口算练习</strong><span>孩子通过设备说“开始学习”</span></div>
+                      <span class="tag active">正在做</span>
+                    </div>
+                    <div class="task">
+                      <div class="time">09:30</div>
+                      <div><strong>喝水和休息</strong><span>休息结束后进入下一项</span></div>
+                      <span class="tag">稍后</span>
+                    </div>
+                    <div class="task">
+                      <div class="time">10:00</div>
+                      <div><strong>语文阅读</strong><span>读完后语音确认完成</span></div>
+                      <span class="tag">稍后</span>
+                    </div>
+                  </section>
+                  <section class="panel">
+                    <h4>正在进行</h4>
+                    <div class="current">
+                      <div><strong>数学口算练习</strong><span>已经开始 6 分钟，未暂停</span></div>
+                      <div class="timer">06:18</div>
+                    </div>
+                    <div class="metrics">
+                      <div class="metric"><b>在线</b><span>设备状态</span></div>
+                      <div class="metric"><b>2次</b><span>今日播报</span></div>
+                      <div class="metric"><b>0项</b><span>需处理</span></div>
+                    </div>
+                  </section>
+                  <section class="panel wide">
+                    <h4>最近动态</h4>
+                    <div class="feed">
+                      <div class="feed-item"><b>09:00 已播报开始提醒</b><span>现在开始数学口算练习，计划25分钟。</span></div>
+                      <div class="feed-item"><b>08:55 已提前提醒</b><span>还有5分钟开始数学口算练习。</span></div>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            </div>
+          </div>
+        </article>
+
+        <article class="option c">
+          <header class="option-header">
+            <h2>方案 C：专业克制</h2>
+            <p>更像系统控制台，信息密度高、边界清晰，适合后续功能增多。</p>
+            <div class="swatches">
+              <span class="swatch sw-c-1"></span>
+              <span class="swatch sw-c-2"></span>
+              <span class="swatch sw-c-3"></span>
+              <span class="swatch sw-c-4"></span>
+            </div>
+          </header>
+          <div class="mock">
+            <div class="app-shell">
+              <nav class="nav">
+                <div class="brand">学习系统<br>管理端</div>
+                <a href="#">总览</a>
+                <a href="#">计划</a>
+                <a href="#">任务</a>
+                <a href="#">设备</a>
+                <a href="#">记录</a>
+              </nav>
+              <section class="main">
+                <div class="topbar">
+                  <div>
+                    <h3>执行总览</h3>
+                    <small>今日 3 项任务 · 设备在线 · 无待处理异常</small>
+                  </div>
+                  <div class="actions">
+                    <button class="secondary">纠错</button>
+                    <button class="primary">同步设备</button>
+                  </div>
+                </div>
+                <div class="grid">
+                  <section class="panel">
+                    <h4>任务队列</h4>
+                    <div class="task">
+                      <div class="time">09:00</div>
+                      <div><strong>数学口算练习</strong><span>状态：进行中 · 计划25分钟</span></div>
+                      <span class="tag active">active</span>
+                    </div>
+                    <div class="task">
+                      <div class="time">09:30</div>
+                      <div><strong>眼睛休息</strong><span>状态：待开始 · 计划10分钟</span></div>
+                      <span class="tag">pending</span>
+                    </div>
+                    <div class="task">
+                      <div class="time">10:00</div>
+                      <div><strong>语文阅读</strong><span>状态：待开始 · 计划30分钟</span></div>
+                      <span class="tag">pending</span>
+                    </div>
+                  </section>
+                  <section class="panel">
+                    <h4>状态摘要</h4>
+                    <div class="current">
+                      <div><strong>等待完成确认</strong><span>当前任务：数学口算练习</span></div>
+                      <div class="timer">18:42</div>
+                    </div>
+                    <div class="metrics">
+                      <div class="metric"><b>33%</b><span>完成率</span></div>
+                      <div class="metric"><b>25</b><span>有效分钟</span></div>
+                      <div class="metric"><b>0</b><span>异常</span></div>
+                    </div>
+                  </section>
+                  <section class="panel wide">
+                    <h4>设备通道</h4>
+                    <div class="device-row">
+                      <div><b>WebSocket</b><span>connected · virtual-box3-001</span></div>
+                      <div><b>计划同步</b><span>今日计划已下发，离线时可本地提醒</span></div>
+                      <div><b>最后回执</b><span>playback_finished · 09:00:04</span></div>
+                    </div>
+                  </section>
+                </div>
+              </section>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
