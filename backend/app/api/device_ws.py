@@ -12,6 +12,7 @@ from app.device.protocol import (
     build_sync_state_message,
 )
 from app.services.devices import (
+    build_device_config_payload,
     build_today_plan_speak_text,
     get_device,
     get_effective_device_settings,
@@ -62,6 +63,9 @@ async def device_ws(
                             "chip_model": device.chip_model,
                         },
                     )
+                )
+                await websocket.send_json(
+                    build_sync_state_message(device_id, "device_config", build_device_config_payload(session, device_id))
                 )
                 settings, _ = get_effective_device_settings(session, device_id)
                 today = dt.date.today()

@@ -153,6 +153,35 @@ def build_today_plan_payload(session: Session, target_date: dt.date) -> dict:
     }
 
 
+def build_device_config_payload(session: Session, device_id: str) -> dict:
+    device_settings, is_override = get_effective_device_settings(session, device_id)
+    language_settings = get_or_create_language_settings(session)
+    latest_updated_at = max(device_settings.updated_at, language_settings.updated_at)
+    return {
+        "device_id": device_id,
+        "config_version": latest_updated_at.isoformat(),
+        "generated_at": utc_now().isoformat(),
+        "device_settings": {
+            "settings_key": device_settings.settings_key,
+            "target_device_id": device_settings.target_device_id,
+            "is_override": is_override,
+            "auto_sync_today_plan": device_settings.auto_sync_today_plan,
+            "auto_broadcast_today_plan": device_settings.auto_broadcast_today_plan,
+            "replay_today_plan_on_reconnect": device_settings.replay_today_plan_on_reconnect,
+            "updated_at": device_settings.updated_at.isoformat(),
+        },
+        "language_settings": {
+            "settings_key": language_settings.settings_key,
+            "today_plan_templates": language_settings.today_plan_templates,
+            "reminder_templates": language_settings.reminder_templates,
+            "virtual_reply_templates": language_settings.virtual_reply_templates,
+            "command_phrases": language_settings.command_phrases,
+            "command_labels": language_settings.command_labels,
+            "updated_at": language_settings.updated_at.isoformat(),
+        },
+    }
+
+
 TASK_KIND_LABELS = {
     "study": "学习",
     "practice": "练习",

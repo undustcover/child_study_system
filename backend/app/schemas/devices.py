@@ -19,3 +19,9 @@ class DeviceSettingsUpdate(BaseModel):
     auto_sync_today_plan: bool | None = None
     auto_broadcast_today_plan: bool | None = None
     replay_today_plan_on_reconnect: bool | None = None
+
+
+class DeviceConfigSyncResponse(BaseModel):
+    device_id: str
+    sent: bool
+    payload: dict

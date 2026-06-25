@@ -15,6 +15,9 @@ class DeviceConnectionManager:
     def is_connected(self, device_id: str) -> bool:
         return device_id in self._connections
 
+    def connected_device_ids(self) -> list[str]:
+        return sorted(self._connections)
+
     async def send_json(self, device_id: str, payload: dict) -> bool:
         websocket = self._connections.get(device_id)
         if websocket is None:

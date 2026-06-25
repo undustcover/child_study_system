@@ -14,9 +14,9 @@ Current product direction:
 
 ## Current Stage
 
-Stage 8 P1-A end-to-end acceptance has started. Automated system self-test is
-in place; final business acceptance should be completed by the user with the
-manual checklist.
+Stage 8 P1-A end-to-end acceptance has started. Stage 8-A baseline device and
+language configuration work is complete; final business acceptance should be
+completed by the user with the manual checklist.
 
 Implemented so far:
 
@@ -32,6 +32,9 @@ Implemented so far:
 - Parent console calendar plan create/edit page
 - Parent console single-day exceptions, vacation ranges, and holiday sync entries
 - Parent console device, statistics, and correction pages
+- Parent console device settings page and language customization page
+- Today-plan broadcast over the device protocol
+- Device/language config sync over `sync_state: device_config`
 - Stage 8 automated end-to-end acceptance test
 - Manual user acceptance checklist
 - Docker and Docker Compose local deployment files
@@ -76,7 +79,22 @@ sends `device_hello`, prints backend `speak` messages, and sends
 `playback_finished` after each printed broadcast. Student utterances are typed in
 Chinese and converted into the same `voice_command` protocol used by the real
 device. Phrase tables and reply templates live in
-`scripts/virtual_device_config.json`.
+`scripts/virtual_device_config.json`. When the backend is available, language
+settings are synchronized from `/api/language-settings`, and connected devices
+receive configuration updates through WebSocket `sync_state` messages.
+
+Useful configuration endpoints:
+
+```text
+GET  /api/devices/settings/default
+PUT  /api/devices/settings/default
+GET  /api/devices/{device_id}/settings
+PUT  /api/devices/{device_id}/settings
+POST /api/devices/{device_id}/sync-config
+GET  /api/language-settings
+PUT  /api/language-settings
+POST /api/language-settings/reset
+```
 
 Manual smoke phrases:
 

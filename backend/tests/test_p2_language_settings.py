@@ -168,3 +168,38 @@ def test_reminder_generation_uses_language_template() -> None:
             assert events[0].message_text == "请开始数学数学作业，预计25分钟。"
         finally:
             fastapi_app.dependency_overrides.clear()
+
+
+def test_language_settings_update_repushes_config_to_online_device() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+
+                saved = client.put(
+                    "/api/language-settings",
+                    json={
+                        "virtual_reply_templates": {"unrecognized": "在线设备同步未识别。"},
+                        "command_phrases": {"QUERY_TODAY_PLAN": ["在线同步今日安排"]},
+                    },
+                )
+                assert saved.status_code == 200
+
+                config_message = None
+                for _ in range(4):
+                    message = websocket.receive_json()
+                    if message.get("state") == "device_config":
+                        config_message = message
+                        break
+                assert config_message is not None
+                language_settings = config_message["payload"]["language_settings"]
+                assert language_settings["virtual_reply_templates"]["unrecognized"] == "在线设备同步未识别。"
+                assert language_settings["command_phrases"]["QUERY_TODAY_PLAN"] == ["在线同步今日安排"]
+        finally:
+            fastapi_app.dependency_overrides.clear()

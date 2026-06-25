@@ -152,3 +152,90 @@ def test_device_hello_uses_saved_settings_for_auto_broadcast() -> None:
                 assert "数学作业" in speak["text"]
         finally:
             fastapi_app.dependency_overrides.clear()
+
+
+def test_device_hello_pushes_config_sync_payload() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            client.put(
+                "/api/language-settings",
+                json={
+                    "virtual_reply_templates": {"unrecognized": "设备同步核验未识别。"},
+                    "command_phrases": {"QUERY_TODAY_PLAN": ["设备同步今日计划"]},
+                },
+            )
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+                websocket.send_json(
+                    {
+                        "type": "device_hello",
+                        "device_id": "virtual-box3-001",
+                        "device_type": "virtual_box_3",
+                        "firmware_version": "config-sync-test",
+                    }
+                )
+                config_message = receive_until(websocket, lambda message: message.get("state") == "device_config")
+
+                payload = config_message["payload"]
+                assert payload["device_id"] == "virtual-box3-001"
+                assert payload["config_version"]
+                assert payload["device_settings"]["auto_sync_today_plan"] is True
+                assert payload["language_settings"]["virtual_reply_templates"]["unrecognized"] == "设备同步核验未识别。"
+                assert payload["language_settings"]["command_phrases"]["QUERY_TODAY_PLAN"] == ["设备同步今日计划"]
+        finally:
+            fastapi_app.dependency_overrides.clear()
+
+
+def test_manual_config_sync_endpoint_sends_to_online_device() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+
+                response = client.post("/api/devices/virtual-box3-001/sync-config")
+                assert response.status_code == 200
+                assert response.json()["sent"] is True
+
+                config_message = receive_until(websocket, lambda message: message.get("state") == "device_config")
+                assert config_message["payload"]["device_id"] == "virtual-box3-001"
+        finally:
+            fastapi_app.dependency_overrides.clear()
+
+
+def test_device_settings_update_repushes_config_to_online_device() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+
+                response = client.put(
+                    "/api/devices/virtual-box3-001/settings",
+                    json={"auto_broadcast_today_plan": True, "replay_today_plan_on_reconnect": True},
+                )
+                assert response.status_code == 200
+
+                config_message = receive_until(websocket, lambda message: message.get("state") == "device_config")
+                device_settings = config_message["payload"]["device_settings"]
+                assert device_settings["is_override"] is True
+                assert device_settings["auto_broadcast_today_plan"] is True
+                assert device_settings["replay_today_plan_on_reconnect"] is True
+        finally:
+            fastapi_app.dependency_overrides.clear()

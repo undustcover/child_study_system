@@ -51,6 +51,15 @@ def apply_backend_language_settings(config: dict[str, Any], settings: dict[str, 
             language[key] = value
 
 
+def apply_device_config_sync(config: dict[str, Any], payload: dict[str, Any]) -> None:
+    language_settings = payload.get("language_settings", {})
+    if isinstance(language_settings, dict):
+        apply_backend_language_settings(config, language_settings)
+    device_settings = payload.get("device_settings", {})
+    if isinstance(device_settings, dict):
+        config["backend_device_settings"] = device_settings
+
+
 def _language_settings_url_from_ws(ws_url: str) -> str:
     parsed = urlparse(ws_url)
     scheme = "https" if parsed.scheme == "wss" else "http"
@@ -208,6 +217,12 @@ async def receive_messages(websocket: websockets.ClientConnection, config: dict[
 
         if message_type == "sync_state":
             state = message.get("state", "")
+            payload = message.get("payload", {})
+            if state == "device_config" and isinstance(payload, dict):
+                apply_device_config_sync(config, payload)
+                version = payload.get("config_version", "")
+                print(f"[{render_template(config, 'sync_state_prefix', **template_values)}] {state} {version}".rstrip())
+                continue
             print(f"[{render_template(config, 'sync_state_prefix', **template_values)}] {state}")
             continue
 
