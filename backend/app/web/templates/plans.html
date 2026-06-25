@@ -235,6 +235,10 @@
         gap: 12px;
       }
 
+      .three {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
       .full {
         grid-column: 1 / -1;
       }
@@ -470,6 +474,100 @@
               </div>
               <div class="status" id="item-status"></div>
             </form>
+
+            <div class="divider"></div>
+
+            <h2>单日调整</h2>
+            <form id="exception-form">
+              <div class="form-grid">
+                <label>
+                  调整日期
+                  <input name="date" type="date" required>
+                </label>
+                <label>
+                  调整方式
+                  <select name="exception_type">
+                    <option value="skip">跳过当天</option>
+                    <option value="override">覆盖为一项任务</option>
+                  </select>
+                </label>
+                <label>
+                  覆盖任务类型
+                  <select name="task_kind">
+                    <option value="study">学习</option>
+                    <option value="practice">练习</option>
+                    <option value="review">复习</option>
+                    <option value="homework">作业</option>
+                    <option value="recitation">背诵</option>
+                    <option value="reading">阅读</option>
+                    <option value="break">休息</option>
+                  </select>
+                </label>
+                <label>
+                  覆盖任务标题
+                  <input name="title" placeholder="覆盖时填写">
+                </label>
+                <label>
+                  开始时间
+                  <input name="planned_start_time" type="time">
+                </label>
+                <label>
+                  结束时间
+                  <input name="planned_end_time" type="time">
+                </label>
+                <label>
+                  计划分钟
+                  <input name="planned_minutes" type="number" min="1">
+                </label>
+                <label>
+                  科目
+                  <input name="subject" placeholder="可不填">
+                </label>
+              </div>
+              <div class="row-actions">
+                <button class="primary" type="submit">保存单日调整</button>
+              </div>
+              <div class="status" id="exception-status"></div>
+            </form>
+            <div class="list" id="exception-list">
+              <div class="empty">先选择一个计划查看单日调整。</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h2>假期与节假日</h2>
+            <form id="holiday-range-form">
+              <div class="form-grid three">
+                <label>
+                  开始日期
+                  <input name="start_date" type="date" required>
+                </label>
+                <label>
+                  结束日期
+                  <input name="end_date" type="date" required>
+                </label>
+                <label>
+                  类型
+                  <select name="day_type">
+                    <option value="winter_vacation">寒假</option>
+                    <option value="summer_vacation">暑假</option>
+                    <option value="custom_label">自定义标签</option>
+                  </select>
+                </label>
+                <label class="full">
+                  名称
+                  <input name="label" required placeholder="例如：寒假">
+                </label>
+              </div>
+              <div class="row-actions">
+                <button class="primary" type="submit">保存日期范围</button>
+                <button class="secondary" type="button" id="sync-holiday-button">同步今年节假日</button>
+              </div>
+              <div class="status" id="holiday-status"></div>
+            </form>
+            <div class="list" id="holiday-list">
+              <div class="empty">正在读取日期标签...</div>
+            </div>
           </section>
         </section>
       </main>
@@ -477,11 +575,15 @@
 
     <script>
       let plans = [];
+      let exceptions = [];
+      let holidays = [];
       let selectedPlanId = null;
       let editingItemId = null;
 
       const planForm = document.querySelector("#plan-form");
       const itemForm = document.querySelector("#item-form");
+      const exceptionForm = document.querySelector("#exception-form");
+      const holidayRangeForm = document.querySelector("#holiday-range-form");
 
       const taskKindLabels = {
         study: "学习",
@@ -553,6 +655,45 @@
         };
       }
 
+      function exceptionPayload() {
+        const data = new FormData(exceptionForm);
+        const type = data.get("exception_type");
+        const payload = {
+          date: data.get("date"),
+          exception_type: type,
+          reason: null,
+          override_payload: null,
+        };
+        if (type === "override") {
+          payload.override_payload = {
+            items: [
+              {
+                sort_order: 1,
+                task_kind: data.get("task_kind"),
+                subject: data.get("subject").trim() || null,
+                title: data.get("title").trim(),
+                planned_start_time: data.get("planned_start_time"),
+                planned_end_time: data.get("planned_end_time"),
+                planned_minutes: Number(data.get("planned_minutes")),
+              },
+            ],
+          };
+        }
+        return payload;
+      }
+
+      function holidayRangePayload() {
+        const data = new FormData(holidayRangeForm);
+        return {
+          start_date: data.get("start_date"),
+          end_date: data.get("end_date"),
+          label: data.get("label").trim(),
+          day_type: data.get("day_type"),
+          source: "parent",
+          is_rest_day: true,
+        };
+      }
+
       async function api(path, options = {}) {
         const response = await fetch(path, {
           headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -576,6 +717,23 @@
         renderPlans();
         fillPlanForm(selectedPlan());
         renderItems();
+        await loadExceptions();
+      }
+
+      async function loadExceptions() {
+        if (!selectedPlanId) {
+          exceptions = [];
+          renderExceptions();
+          return;
+        }
+        exceptions = await api(`/api/calendar-plans/${selectedPlanId}/exceptions`);
+        renderExceptions();
+      }
+
+      async function loadHolidays() {
+        const year = new Date().getFullYear();
+        holidays = await api(`/api/holidays?start_date=${year}-01-01&end_date=${year}-12-31`);
+        renderHolidays();
       }
 
       function renderPlans() {
@@ -642,6 +800,44 @@
               <button class="secondary" type="button" data-edit-item="${item.id}">编辑任务</button>
               <button class="danger" type="button" data-delete-item="${item.id}">删除任务</button>
             </div>
+          </article>
+        `).join("");
+      }
+
+      function renderExceptions() {
+        const container = document.querySelector("#exception-list");
+        if (!selectedPlanId) {
+          container.innerHTML = '<div class="empty">先选择一个计划查看单日调整。</div>';
+          return;
+        }
+        if (!exceptions.length) {
+          container.innerHTML = '<div class="empty">这个计划还没有单日调整。</div>';
+          return;
+        }
+        container.innerHTML = exceptions.map((exception) => {
+          const overrideItems = exception.override_payload?.items || [];
+          const detail = exception.exception_type === "skip"
+            ? "跳过当天，不生成任务"
+            : `覆盖为 ${overrideItems.length} 项任务`;
+          return `
+            <article class="item-card">
+              <strong>${escapeHtml(exception.date)} · ${exception.exception_type === "skip" ? "跳过" : "覆盖"}</strong>
+              <div class="meta">${escapeHtml(detail)}</div>
+            </article>
+          `;
+        }).join("");
+      }
+
+      function renderHolidays() {
+        const container = document.querySelector("#holiday-list");
+        if (!holidays.length) {
+          container.innerHTML = '<div class="empty">今年还没有日期标签。</div>';
+          return;
+        }
+        container.innerHTML = holidays.slice(0, 8).map((holiday) => `
+          <article class="item-card">
+            <strong>${escapeHtml(holiday.date)} · ${escapeHtml(holiday.label)}</strong>
+            <div class="meta">${escapeHtml(holiday.day_type)} · ${holiday.is_rest_day ? "休息日" : "工作日"} · ${escapeHtml(holiday.source)}</div>
           </article>
         `).join("");
       }
@@ -714,10 +910,12 @@
           selectedPlanId = Number(selectButton.dataset.selectPlan);
           setStatus("#plan-status", "");
           setStatus("#item-status", "");
+          setStatus("#exception-status", "");
           renderPlans();
           fillPlanForm(selectedPlan());
           fillItemForm(null);
           renderItems();
+          await loadExceptions();
         }
         if (editButton) {
           const item = selectedPlan()?.items.find((candidate) => candidate.id === Number(editButton.dataset.editItem));
@@ -746,6 +944,50 @@
 
       document.querySelector("#reset-item-button").addEventListener("click", () => fillItemForm(null));
 
+      exceptionForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!selectedPlanId) {
+          setStatus("#exception-status", "请先选择一个计划。");
+          return;
+        }
+        try {
+          await api(`/api/calendar-plans/${selectedPlanId}/exceptions`, {
+            method: "PUT",
+            body: JSON.stringify(exceptionPayload()),
+          });
+          setStatus("#exception-status", "单日调整已保存。");
+          exceptionForm.reset();
+          await loadExceptions();
+        } catch (error) {
+          setStatus("#exception-status", `保存失败：${error.message}`);
+        }
+      });
+
+      holidayRangeForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const created = await api("/api/holidays/ranges", {
+            method: "POST",
+            body: JSON.stringify(holidayRangePayload()),
+          });
+          setStatus("#holiday-status", `已保存 ${created.length} 天日期标签。`);
+          await loadHolidays();
+        } catch (error) {
+          setStatus("#holiday-status", `保存失败：${error.message}`);
+        }
+      });
+
+      document.querySelector("#sync-holiday-button").addEventListener("click", async () => {
+        try {
+          const year = new Date().getFullYear();
+          const synced = await api(`/api/holidays/sync/${year}`, { method: "POST" });
+          setStatus("#holiday-status", `已读取 ${year} 年本地节假日缓存：${synced.length} 条。`);
+          await loadHolidays();
+        } catch (error) {
+          setStatus("#holiday-status", `同步失败：${error.message}`);
+        }
+      });
+
       document.querySelector("#deactivate-plan-button").addEventListener("click", async () => {
         if (!selectedPlanId) {
           return;
@@ -758,6 +1000,10 @@
       loadPlans().catch((error) => {
         document.querySelector("#plan-list").innerHTML = '<div class="empty">计划加载失败。</div>';
         setStatus("#plan-status", `加载失败：${error.message}`);
+      });
+      loadHolidays().catch((error) => {
+        document.querySelector("#holiday-list").innerHTML = '<div class="empty">日期标签加载失败。</div>';
+        setStatus("#holiday-status", `加载失败：${error.message}`);
       });
     </script>
   </body>

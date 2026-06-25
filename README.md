@@ -28,6 +28,7 @@ Implemented so far:
 - Parent console static homepage shell
 - Parent console homepage reads `/api/dashboard/today`
 - Parent console calendar plan create/edit page
+- Parent console single-day exceptions, vacation ranges, and holiday sync entries
 - Docker and Docker Compose local deployment files
 - Persistent `data/` directory for SQLite
 
