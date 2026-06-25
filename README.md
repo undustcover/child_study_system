@@ -26,6 +26,7 @@ Implemented so far:
 - Controlled Chinese natural-language intent parser
 - Parent console visual direction selected as option B: warm family style
 - Parent console static homepage shell
+- Parent console homepage reads `/api/dashboard/today`
 - Docker and Docker Compose local deployment files
 - Persistent `data/` directory for SQLite
 

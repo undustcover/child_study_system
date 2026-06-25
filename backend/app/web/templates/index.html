@@ -158,6 +158,15 @@
         display: grid;
       }
 
+      .empty {
+        border-radius: 7px;
+        background: #fff8f3;
+        color: #765f53;
+        padding: 14px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
       .task {
         display: grid;
         grid-template-columns: 68px minmax(0, 1fr) auto;
@@ -384,7 +393,7 @@
         <header class="topbar">
           <div>
             <h1>今日陪伴看板</h1>
-            <p class="subtitle">6月25日 周四 · 默认学生 · 中文界面 · 学生通过 BOX-3 语音执行任务</p>
+            <p class="subtitle" id="today-subtitle">正在加载今日数据...</p>
           </div>
           <div class="actions">
             <button class="secondary" type="button">查看日历</button>
@@ -395,31 +404,8 @@
         <section class="dashboard">
           <section class="panel">
             <h2>今天要做的事</h2>
-            <div class="task-list">
-              <div class="task">
-                <div class="time">09:00</div>
-                <div>
-                  <strong>数学口算练习</strong>
-                  <span>孩子通过设备说“开始学习”，完成后语音确认。</span>
-                </div>
-                <span class="tag active">正在做</span>
-              </div>
-              <div class="task">
-                <div class="time">09:30</div>
-                <div>
-                  <strong>喝水和休息</strong>
-                  <span>休息结束后自动进入下一项提醒。</span>
-                </div>
-                <span class="tag">稍后</span>
-              </div>
-              <div class="task">
-                <div class="time">10:00</div>
-                <div>
-                  <strong>语文阅读</strong>
-                  <span>读完后语音确认完成，计划 30 分钟。</span>
-                </div>
-                <span class="tag">稍后</span>
-              </div>
+            <div class="task-list" id="task-list">
+              <div class="empty">正在读取今日任务...</div>
             </div>
           </section>
 
@@ -427,22 +413,22 @@
             <h2>正在进行</h2>
             <div class="current-head">
               <div>
-                <strong>数学口算练习</strong>
-                <span>已经开始 6 分钟，当前未暂停。</span>
+                <strong id="current-title">正在加载</strong>
+                <span id="current-description">正在读取当前任务状态...</span>
               </div>
-              <div class="timer">06:18</div>
+              <div class="timer" id="current-timer">00:00</div>
             </div>
             <div class="stats">
               <div class="stat">
-                <b>在线</b>
+                <b id="device-status">离线</b>
                 <span>设备状态</span>
               </div>
               <div class="stat">
-                <b>2次</b>
+                <b id="reminder-count">0次</b>
                 <span>今日播报</span>
               </div>
               <div class="stat">
-                <b>0项</b>
+                <b id="parent-confirm-count">0项</b>
                 <span>需处理</span>
               </div>
             </div>
@@ -450,39 +436,167 @@
 
           <section class="panel wide">
             <h2>最近动态</h2>
-            <div class="events">
-              <div class="event">
-                <strong>09:00 已播报开始提醒</strong>
-                <span>现在开始数学口算练习，计划25分钟。</span>
-              </div>
-              <div class="event">
-                <strong>08:55 已提前提醒</strong>
-                <span>还有5分钟开始数学口算练习。</span>
-              </div>
+            <div class="events" id="reminder-list">
+              <div class="empty">正在读取最近播报...</div>
             </div>
           </section>
 
           <section class="panel wide">
             <h2>设备与处理状态</h2>
-            <div class="device-grid">
+            <div class="device-grid" id="device-grid">
               <div class="device-cell">
-                <strong>设备在线</strong>
-                <span>virtual-box3-001 · 刚刚同步今日计划</span>
-              </div>
-              <div class="device-cell">
-                <strong>计划同步</strong>
-                <span>今日计划已下发，离线时可本地提醒。</span>
-              </div>
-              <div class="device-cell">
-                <strong>待家长确认</strong>
-                <span>暂无需要处理的事项。</span>
+                <strong>设备状态</strong>
+                <span>正在读取设备信息...</span>
               </div>
             </div>
           </section>
         </section>
 
-        <p class="footer-note">当前为阶段7首页视觉落地版，数据仍为静态占位；后续会逐步接入今日计划、设备状态、播报记录和纠错接口。</p>
+        <p class="footer-note" id="footer-note">首页数据来自 <code>/api/dashboard/today</code>；后续继续接入计划编辑和纠错操作。</p>
       </main>
     </div>
+    <script>
+      const activeStatuses = new Set(["studying", "reminding", "waiting_finish_confirm", "paused"]);
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function formatReminderTime(value) {
+        if (!value) {
+          return "";
+        }
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+          return "";
+        }
+        return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
+      }
+
+      function taskDetail(task) {
+        const subject = task.subject ? `${task.subject} · ` : "";
+        const content = task.content ? `${task.content} · ` : "";
+        return `${subject}${content}计划 ${task.planned_minutes} 分钟`;
+      }
+
+      function renderTasks(tasks) {
+        const container = document.querySelector("#task-list");
+        if (!tasks.length) {
+          container.innerHTML = '<div class="empty">今天还没有生成任务。可以先到计划页面创建日历计划，再生成今日任务。</div>';
+          return;
+        }
+        container.innerHTML = tasks
+          .map((task) => {
+            const active = activeStatuses.has(task.status) ? " active" : "";
+            return `
+              <div class="task">
+                <div class="time">${escapeHtml(task.start_time)}</div>
+                <div>
+                  <strong>${escapeHtml(task.title)}</strong>
+                  <span>${escapeHtml(taskDetail(task))}</span>
+                </div>
+                <span class="tag${active}">${escapeHtml(task.status_label)}</span>
+              </div>
+            `;
+          })
+          .join("");
+      }
+
+      function renderCurrent(current) {
+        const title = document.querySelector("#current-title");
+        const description = document.querySelector("#current-description");
+        const timer = document.querySelector("#current-timer");
+        title.textContent = current.task ? current.task.title : "暂无当前任务";
+        description.textContent = current.description;
+        timer.textContent = current.elapsed_label || "00:00";
+      }
+
+      function renderStats(stats) {
+        document.querySelector("#device-status").textContent = stats.device_status_label;
+        document.querySelector("#reminder-count").textContent = `${stats.reminder_count}次`;
+        document.querySelector("#parent-confirm-count").textContent = `${stats.pending_parent_confirm}项`;
+      }
+
+      function renderReminders(reminders) {
+        const container = document.querySelector("#reminder-list");
+        if (!reminders.length) {
+          container.innerHTML = '<div class="empty">今天还没有播报记录。</div>';
+          return;
+        }
+        container.innerHTML = reminders
+          .map((reminder) => `
+            <div class="event">
+              <strong>${escapeHtml(formatReminderTime(reminder.scheduled_at))} ${escapeHtml(reminder.status_label)}${escapeHtml(reminder.event_type_label)}</strong>
+              <span>${escapeHtml(reminder.message_text)}</span>
+            </div>
+          `)
+          .join("");
+      }
+
+      function renderDevices(devices, stats) {
+        const container = document.querySelector("#device-grid");
+        if (!devices.length) {
+          container.innerHTML = `
+            <div class="device-cell">
+              <strong>设备离线</strong>
+              <span>还没有设备连接记录。</span>
+            </div>
+            <div class="device-cell">
+              <strong>计划同步</strong>
+              <span>暂无同步记录。</span>
+            </div>
+            <div class="device-cell">
+              <strong>待家长确认</strong>
+              <span>${stats.pending_parent_confirm ? `有 ${stats.pending_parent_confirm} 项需要处理。` : "暂无需要处理的事项。"}</span>
+            </div>
+          `;
+          return;
+        }
+        const device = devices[0];
+        container.innerHTML = `
+          <div class="device-cell">
+            <strong>设备${escapeHtml(device.status_label)}</strong>
+            <span>${escapeHtml(device.device_id)} · ${escapeHtml(device.hardware_model)}</span>
+          </div>
+          <div class="device-cell">
+            <strong>计划同步</strong>
+            <span>${escapeHtml(device.sync_label)}</span>
+          </div>
+          <div class="device-cell">
+            <strong>待家长确认</strong>
+            <span>${stats.pending_parent_confirm ? `有 ${stats.pending_parent_confirm} 项需要处理。` : "暂无需要处理的事项。"}</span>
+          </div>
+        `;
+      }
+
+      async function loadDashboard() {
+        try {
+          const response = await fetch("/api/dashboard/today");
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+          }
+          const data = await response.json();
+          document.querySelector("#today-subtitle").textContent =
+            `${data.date_label} · ${data.student_name} · 中文界面 · 学生通过 BOX-3 语音执行任务`;
+          renderTasks(data.tasks);
+          renderCurrent(data.current);
+          renderStats(data.stats);
+          renderReminders(data.reminders);
+          renderDevices(data.devices, data.stats);
+        } catch (error) {
+          document.querySelector("#today-subtitle").textContent = "今日数据加载失败，请确认后端服务正在运行。";
+          document.querySelector("#task-list").innerHTML = '<div class="empty">暂时无法读取今日任务。</div>';
+          document.querySelector("#reminder-list").innerHTML = '<div class="empty">暂时无法读取播报记录。</div>';
+          document.querySelector("#footer-note").textContent = `数据加载失败：${error.message}`;
+        }
+      }
+
+      loadDashboard();
+    </script>
   </body>
 </html>
