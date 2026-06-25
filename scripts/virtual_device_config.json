@@ -7,6 +7,15 @@
   "connection": {
     "url_template": "ws://localhost:8000/ws/device/{device_id}"
   },
+  "control_phrases": {
+    "disconnect": [
+      "断开连接",
+      "模拟离线"
+    ]
+  },
+  "tts": {
+    "enabled": false
+  },
   "intent_parser": {
     "max_clarification_attempts": 2,
     "clarification_timeout_seconds": 30,
@@ -115,15 +124,17 @@
   "reply_templates": {
     "prompt": "请输入学生说的话，或输入 /quit 退出：",
     "command_sent": "已识别：{command}，已发送到后端。",
-    "clarify": "我听到几个可能的意思：{options}。你是想说哪一个？",
-    "clarify_retry": "我还没对齐你的意思。请直接说其中一个：{options}。",
+    "clarify": "我听到几个可能的意思：{options}。请用肯定句直接说你要哪一个。",
+    "clarify_retry": "我还没对齐你的意思。请用肯定句直接说其中一个：{options}。",
     "clarify_abandoned": "我先不执行这句话，继续等下一句。",
-    "unrecognized": "我没听明白。你可以说“开始学习”“完成了”或“今天计划”。",
+    "unrecognized": "刚才你说什么，我没有听清楚。",
     "negated": "我听到你是在否定或取消，所以这次不执行。你想执行哪个动作？",
     "speak_prefix": "播报",
     "display_state_prefix": "后端状态",
     "sync_state_prefix": "同步状态",
     "playback_finished": "播报完成回执已发送：{message_id}",
+    "startup_query_sent": "启动后已自动查询今日计划。",
+    "disconnect_requested": "收到断开连接指令，正在模拟设备离线。",
     "connection_opened": "虚拟设备已连接：{url}",
     "connection_closed": "连接已关闭。",
     "llm_placeholder": "LLM意图识别接口已预留，阶段6默认不启用。"

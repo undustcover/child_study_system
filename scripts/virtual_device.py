@@ -7,6 +7,8 @@ import asyncio
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import platform
+import subprocess
 import sys
 from typing import Any
 
@@ -23,9 +25,28 @@ def load_config(path: Path) -> dict[str, Any]:
         return json.load(file)
 
 
+class SafeTemplateValues(dict[str, Any]):
+    def __missing__(self, key: str) -> str:
+        return "{" + key + "}"
+
+
 def render_template(config: dict[str, Any], key: str, **values: Any) -> str:
     template = config.get("reply_templates", {}).get(key, key)
-    return template.format(**values)
+    today = datetime.now().date().isoformat()
+    template_values = SafeTemplateValues(
+        {
+            "student": "",
+            "学生": "",
+            "date": today,
+            "日期": today,
+            "task": "",
+            "任务": "",
+            "minutes": "",
+            "分钟数": "",
+        }
+    )
+    template_values.update(values)
+    return template.format_map(template_values)
 
 
 def command_label(config: dict[str, Any], command: str | None) -> str:
@@ -63,28 +84,90 @@ def build_voice_command(device_id: str, text: str, result: ParseResult) -> dict[
     return payload
 
 
-async def receive_messages(websocket: websockets.ClientConnection, config: dict[str, Any]) -> None:
+def build_startup_query_command(device_id: str) -> dict[str, Any]:
+    return build_voice_command(
+        device_id,
+        "启动后自动查询今日计划",
+        ParseResult(ParseAction.COMMAND, "启动后自动查询今日计划", command="QUERY_TODAY_PLAN"),
+    )
+
+
+def is_disconnect_phrase(config: dict[str, Any], text: str) -> bool:
+    phrases = config.get("control_phrases", {}).get("disconnect", ["断开连接"])
+    return text in set(phrases)
+
+
+def extract_template_values(message: dict[str, Any]) -> dict[str, Any]:
+    payload = message.get("payload", {})
+    if not isinstance(payload, dict):
+        payload = {}
+    task = payload.get("task") if isinstance(payload, dict) else None
+    if not isinstance(task, dict):
+        task = {}
+    minutes = task.get("planned_minutes") or payload.get("minutes", "")
+    task_name = task.get("title") or payload.get("task_name", "")
+    return {
+        "student": payload.get("student_name", ""),
+        "学生": payload.get("student_name", ""),
+        "date": payload.get("target_date") or datetime.now().date().isoformat(),
+        "日期": payload.get("target_date") or datetime.now().date().isoformat(),
+        "task": task_name,
+        "任务": task_name,
+        "minutes": minutes,
+        "分钟数": minutes,
+    }
+
+
+def tts_enabled(config: dict[str, Any], cli_enabled: bool) -> bool:
+    return cli_enabled or bool(config.get("tts", {}).get("enabled", False))
+
+
+def speak_with_tts(text: str) -> None:
+    if not text:
+        return
+    if platform.system() != "Windows":
+        print("当前系统未启用电脑TTS：仅支持Windows本地语音。")
+        return
+    escaped = text.replace("'", "''")
+    command = (
+        "Add-Type -AssemblyName System.Speech; "
+        "$speaker = New-Object System.Speech.Synthesis.SpeechSynthesizer; "
+        f"$speaker.Speak('{escaped}')"
+    )
+    subprocess.run(["powershell", "-NoProfile", "-Command", command], check=False, timeout=30)
+
+
+async def maybe_speak_with_tts(text: str, enabled: bool) -> None:
+    if not enabled:
+        return
+    loop = asyncio.get_running_loop()
+    await loop.run_in_executor(None, speak_with_tts, text)
+
+
+async def receive_messages(websocket: websockets.ClientConnection, config: dict[str, Any], *, use_tts: bool) -> None:
     async for raw_message in websocket:
         message = json.loads(raw_message)
         message_type = message.get("type")
+        template_values = extract_template_values(message)
 
         if message_type == "speak":
             text = message.get("text", "")
             message_id = message.get("message_id", "")
-            print(f"[{render_template(config, 'speak_prefix')}] {text}")
+            print(f"[{render_template(config, 'speak_prefix', **template_values)}] {text}")
+            await maybe_speak_with_tts(text, use_tts)
             await websocket.send(json.dumps({"type": "playback_finished", "message_id": message_id}, ensure_ascii=False))
-            print(render_template(config, "playback_finished", message_id=message_id))
+            print(render_template(config, "playback_finished", message_id=message_id, **template_values))
             continue
 
         if message_type == "display_state":
             state = message.get("state", "")
             backend_message = message.get("payload", {}).get("message", "")
-            print(f"[{render_template(config, 'display_state_prefix')}] {state} {backend_message}".rstrip())
+            print(f"[{render_template(config, 'display_state_prefix', **template_values)}] {state} {backend_message}".rstrip())
             continue
 
         if message_type == "sync_state":
             state = message.get("state", "")
-            print(f"[{render_template(config, 'sync_state_prefix')}] {state}")
+            print(f"[{render_template(config, 'sync_state_prefix', **template_values)}] {state}")
             continue
 
         print(f"[unknown] {message}")
@@ -102,13 +185,25 @@ async def send_user_commands(
     device_id: str,
 ) -> None:
     prompt = render_template(config, "prompt")
+    clarification_timeout = int(config.get("intent_parser", {}).get("clarification_timeout_seconds", 30))
     while True:
         try:
-            text = (await read_user_line(prompt)).strip()
+            if parser.has_pending_clarification:
+                text = (await asyncio.wait_for(read_user_line(prompt), timeout=clarification_timeout)).strip()
+            else:
+                text = (await read_user_line(prompt)).strip()
+        except asyncio.TimeoutError:
+            result = parser.abandon_clarification()
+            print(render_parser_feedback(config, result))
+            continue
         except EOFError:
             return
 
         if text in {"/quit", "/exit"}:
+            await websocket.close()
+            return
+        if is_disconnect_phrase(config, text):
+            print(render_template(config, "disconnect_requested"))
             await websocket.close()
             return
         if not text:
@@ -136,10 +231,13 @@ def render_parser_feedback(config: dict[str, Any], result: ParseResult) -> str:
 
 async def run_virtual_device(config: dict[str, Any], *, device_id: str, url: str) -> None:
     parser = ControlledIntentParser(config)
+    use_tts = tts_enabled(config, False)
     async with websockets.connect(url) as websocket:
         print(render_template(config, "connection_opened", url=url))
         await websocket.send(json.dumps(build_hello(config, device_id), ensure_ascii=False))
-        receiver = asyncio.create_task(receive_messages(websocket, config))
+        await websocket.send(json.dumps(build_startup_query_command(device_id), ensure_ascii=False))
+        print(render_template(config, "startup_query_sent"))
+        receiver = asyncio.create_task(receive_messages(websocket, config, use_tts=use_tts))
         sender = asyncio.create_task(send_user_commands(websocket, config, parser, device_id))
         done, pending = await asyncio.wait({receiver, sender}, return_when=asyncio.FIRST_COMPLETED)
         for task in pending:
@@ -157,6 +255,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH, help="Path to virtual_device_config.json.")
     parser.add_argument("--device-id", help="Override the configured virtual device id.")
     parser.add_argument("--url", help="Override backend WebSocket URL. Supports {device_id}.")
+    parser.add_argument("--tts", action="store_true", help="Enable optional computer TTS for backend speak messages.")
     return parser.parse_args()
 
 
@@ -165,6 +264,8 @@ def main() -> None:
     config = load_config(args.config)
     device_id = args.device_id or config.get("device", {}).get("device_id", "virtual-box3-001")
     url = build_device_url(config, device_id, args.url)
+    if args.tts:
+        config.setdefault("tts", {})["enabled"] = True
     try:
         asyncio.run(run_virtual_device(config, device_id=device_id, url=url))
     except KeyboardInterrupt:

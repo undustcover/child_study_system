@@ -104,6 +104,10 @@ class ControlledIntentParser:
     def reset_clarification(self) -> None:
         self._clarification = None
 
+    def abandon_clarification(self, text: str = "") -> ParseResult:
+        self._clarification = None
+        return ParseResult(ParseAction.ABANDONED, text, message_key="clarify_abandoned")
+
     def _match_candidates(self, normalized: str) -> list[IntentCandidate]:
         matches: list[IntentCandidate] = []
         for command, phrases in self.commands.items():
