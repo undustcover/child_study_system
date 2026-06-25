@@ -62,6 +62,7 @@ def test_language_settings_api_round_trip_and_preview() -> None:
             response = client.get("/api/language-settings")
             assert response.status_code == 200
             assert response.json()["virtual_reply_templates"]["unrecognized"] == "刚才你说什么，我没有听清楚。"
+            assert response.json()["today_plan_templates"]["completed_after_finish"] == "今天的安排都完成了，辛苦啦。可以休息了。"
             assert "播报本日计划" in response.json()["command_phrases"]["QUERY_TODAY_PLAN"]
 
             saved = client.put(

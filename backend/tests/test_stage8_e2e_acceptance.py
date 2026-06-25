@@ -254,3 +254,50 @@ def test_query_today_plan_without_tasks_still_pushes_speak_message() -> None:
                 assert speak["text"] == "6月28日还没有安排任务。"
         finally:
             fastapi_app.dependency_overrides.clear()
+
+
+def test_complete_last_task_pushes_today_completed_speak_message() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            client.post(
+                "/api/calendar-plans",
+                json={
+                    "name": "最后一项完成播报测试",
+                    "start_date": "2026-06-25",
+                    "end_date": "2026-06-25",
+                    "repeat_rule": {"weekdays": [4]},
+                    "items": [
+                        {
+                            "sort_order": 1,
+                            "task_kind": "homework",
+                            "subject": "数学",
+                            "title": "数学作业",
+                            "planned_start_time": "09:00",
+                            "planned_end_time": "09:25",
+                            "planned_minutes": 25,
+                        }
+                    ],
+                },
+            )
+            client.post("/api/daily-tasks/generate?date=2026-06-25")
+
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+                websocket.send_json(voice_message("START_STUDY", "开始学习", "2026-06-25T09:00:00"))
+                started = receive_until(websocket, lambda message: message.get("type") == "display_state")
+                assert started["state"] == "studying"
+
+                websocket.send_json(voice_message("COMPLETE_STUDY", "完成了", "2026-06-25T09:20:00"))
+                completed = receive_until(websocket, lambda message: message.get("type") == "display_state")
+                speak = receive_until(websocket, lambda message: message.get("type") == "speak")
+
+                assert completed["state"] == "completed"
+                assert speak["text"] == "今天的安排都完成了，辛苦啦。可以休息了。"
+        finally:
+            fastapi_app.dependency_overrides.clear()

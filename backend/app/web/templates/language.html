@@ -31,6 +31,8 @@
       .panel { margin-top: 16px; border: 1px solid #ead8cc; border-radius: 8px; background: #fff; padding: 16px; }
       .panel h2 { margin-bottom: 6px; font-size: 18px; }
       .hint { color: #7a6154; font-size: 13px; line-height: 1.55; }
+      .field-notes { display: grid; gap: 4px; margin-top: 8px; color: #7a6154; font-size: 12px; line-height: 1.5; }
+      .field-notes code { color: #255345; font-weight: 700; }
       .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
       .field { display: grid; gap: 6px; }
       .field label { color: #725442; font-size: 13px; font-weight: 700; }
@@ -66,17 +68,20 @@
         <form id="language-form">
           <section class="panel" data-panel="today">
             <h2>今日计划播报</h2>
-            <p class="hint">可用字段：{date_label}、{target_date}、{remaining_count}、{task_summaries}、{extra_suffix}、{extra_count}</p>
+            <p class="hint">这些文案用于孩子询问今天计划，以及最后一项完成后的主动播报。</p>
+            <div class="field-notes" id="today-notes"></div>
             <div class="grid" id="today-fields"></div>
           </section>
           <section class="panel hidden" data-panel="reminders">
             <h2>提醒模板</h2>
-            <p class="hint">可用字段：{task_name}、{title}、{subject}、{planned_minutes}、{pre_start_minutes}</p>
+            <p class="hint">这些文案用于到点提醒、提前提醒、延迟提醒和结束确认。</p>
+            <div class="field-notes" id="reminder-notes"></div>
             <div class="grid" id="reminder-fields"></div>
           </section>
           <section class="panel hidden" data-panel="device">
             <h2>虚拟设备本地回复</h2>
             <p class="hint">包含澄清提示语、未识别回复语、播报前缀和连接状态提示。</p>
+            <div class="field-notes" id="reply-notes"></div>
             <div class="grid" id="reply-fields"></div>
           </section>
           <section class="panel hidden" data-panel="commands">
@@ -99,6 +104,7 @@
         today_plan_templates: {
           empty: "无任务文案",
           completed: "全部完成文案",
+          completed_after_finish: "最后一项完成后主动播报",
           single: "剩余一项文案",
           multiple: "剩余多项文案",
           extra_suffix: "超过三项补充"
@@ -130,6 +136,29 @@
           llm_placeholder: "LLM预留"
         }
       };
+      const fieldNotes = {
+        today: {
+          date_label: "显示给孩子听的日期，比如“今天”或“6月25日”",
+          target_date: "机器使用的日期，格式为 YYYY-MM-DD",
+          remaining_count: "今天还没有完成或跳过的任务数量",
+          task_summaries: "任务摘要列表，包含时间、科目、名称和计划分钟数",
+          extra_suffix: "任务超过三项时追加的补充说明",
+          extra_count: "超过前三项以外的任务数量"
+        },
+        reminders: {
+          task_name: "完整任务名，一般由科目和标题组成",
+          title: "任务标题，比如“数学作业”",
+          subject: "科目，比如“数学”",
+          planned_minutes: "计划时长，单位分钟",
+          pre_start_minutes: "提前提醒分钟数"
+        },
+        device: {
+          command: "识别出来的命令中文名",
+          options: "澄清时列出的候选命令",
+          message_id: "后端播报消息编号",
+          url: "虚拟设备连接的后端地址"
+        }
+      };
       const commandLabels = {
         START_STUDY: "开始学习",
         PAUSE_STUDY: "暂停学习",
@@ -145,6 +174,11 @@
 
       function esc(v) { return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
       function setStatus(text) { document.querySelector("#status").textContent = text; }
+      function renderNotes(containerId, notes) {
+        document.querySelector(containerId).innerHTML = Object.entries(notes).map(([key, value]) => (
+          `<div><code>{${esc(key)}}</code>：${esc(value)}</div>`
+        )).join("");
+      }
       async function api(path, options = {}) {
         const response = await fetch(path, { headers: { "Content-Type": "application/json", ...(options.headers || {}) }, ...options });
         if (!response.ok) {
@@ -174,6 +208,9 @@
       }
 
       function renderAll() {
+        renderNotes("#today-notes", fieldNotes.today);
+        renderNotes("#reminder-notes", fieldNotes.reminders);
+        renderNotes("#reply-notes", fieldNotes.device);
         renderTextFields("#today-fields", "today_plan_templates", 2);
         renderTextFields("#reminder-fields", "reminder_templates", 2);
         renderTextFields("#reply-fields", "virtual_reply_templates", 2);

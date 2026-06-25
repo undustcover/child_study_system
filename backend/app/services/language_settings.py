@@ -11,6 +11,7 @@ DEFAULT_LANGUAGE_SETTINGS_KEY = "default"
 DEFAULT_TODAY_PLAN_TEMPLATES = {
     "empty": "{date_label}还没有安排任务。",
     "completed": "{date_label}的计划已经完成了，目前没有剩余任务。",
+    "completed_after_finish": "今天的安排都完成了，辛苦啦。可以休息了。",
     "single": "{date_label}还有1项安排：{task_summaries}。",
     "multiple": "{date_label}还有{remaining_count}项安排：{task_summaries}{extra_suffix}。",
     "extra_suffix": "；另外还有{extra_count}项安排",

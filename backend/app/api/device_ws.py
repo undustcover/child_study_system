@@ -13,6 +13,7 @@ from app.device.protocol import (
 )
 from app.services.devices import (
     build_device_config_payload,
+    build_today_completion_speak_text,
     build_today_plan_speak_text,
     get_device,
     get_effective_device_settings,
@@ -110,6 +111,10 @@ async def device_ws(
                     if isinstance(target_date, str):
                         target_date = dt.date.fromisoformat(target_date)
                     await websocket.send_json(build_speak_message(build_today_plan_speak_text(session, target_date)))
+                if payload.get("command") == "COMPLETE_STUDY" and result.task:
+                    completion_text = build_today_completion_speak_text(session, result.task.date)
+                    if completion_text:
+                        await websocket.send_json(build_speak_message(completion_text))
                 continue
 
             if message_type == DeviceMessageType.PLAYBACK_FINISHED:

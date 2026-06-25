@@ -84,3 +84,13 @@ def test_stage7_remaining_page_routes_are_registered() -> None:
     assert "/devices" in paths
     assert "/stats" in paths
     assert "/corrections" in paths
+    assert "/language" in paths
+
+
+def test_language_page_renders_field_notes() -> None:
+    response = TestClient(fastapi_app).get("/language")
+
+    assert response.status_code == 200
+    assert "今日计划播报" in response.text
+    assert "date_label: \"显示给孩子听的日期" in response.text
+    assert "planned_minutes: \"计划时长" in response.text

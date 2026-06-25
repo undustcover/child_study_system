@@ -242,6 +242,22 @@ def build_today_plan_speak_text(session: Session, target_date: dt.date) -> str:
     )
 
 
+def build_today_completion_speak_text(session: Session, target_date: dt.date) -> str | None:
+    tasks = list_daily_tasks(session, target_date)
+    if not tasks:
+        return None
+    if any(task.status not in FINISHED_TASK_STATUSES for task in tasks):
+        return None
+    language_settings = get_or_create_language_settings(session)
+    return render_template(
+        language_settings.today_plan_templates["completed_after_finish"],
+        {
+            "date_label": _date_label(target_date),
+            "target_date": target_date.isoformat(),
+        },
+    )
+
+
 def handle_device_voice_command(session: Session, payload: dict) -> CommandResult:
     command = CommandType(payload["command"])
     command_payload = {"device_id": payload.get("device_id"), "text": payload.get("text")}
