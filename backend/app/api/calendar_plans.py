@@ -1,3 +1,5 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, Response, status
 from sqlmodel import Session
 
@@ -25,6 +27,7 @@ from app.services.calendar_plans import (
     update_schedule_task_item,
     upsert_schedule_exception,
 )
+from app.services.daily_tasks import refresh_unstarted_daily_tasks
 from app.services.students import get_or_create_default_student
 
 router = APIRouter(prefix="/calendar-plans", tags=["calendar plans"])
@@ -41,6 +44,10 @@ def _to_plan_read(session: Session, plan_id: int) -> SchedulePlanRead:
     )
 
 
+def _refresh_today_tasks(session: Session) -> None:
+    refresh_unstarted_daily_tasks(session, date.today())
+
+
 @router.post("", response_model=SchedulePlanRead, status_code=status.HTTP_201_CREATED)
 async def create_plan(
     payload: SchedulePlanCreate,
@@ -48,6 +55,7 @@ async def create_plan(
 ) -> SchedulePlanRead:
     student = get_or_create_default_student(session)
     plan = create_schedule_plan(session, student.id, payload)
+    _refresh_today_tasks(session)
     return _to_plan_read(session, plan.id)
 
 
@@ -68,12 +76,14 @@ async def patch_plan(
     session: Session = Depends(get_session),
 ) -> SchedulePlanRead:
     plan = update_schedule_plan(session, plan_id, payload)
+    _refresh_today_tasks(session)
     return _to_plan_read(session, plan.id)
 
 
 @router.post("/{plan_id}/deactivate", response_model=SchedulePlanRead)
 async def deactivate_plan(plan_id: int, session: Session = Depends(get_session)) -> SchedulePlanRead:
     plan = deactivate_schedule_plan(session, plan_id)
+    _refresh_today_tasks(session)
     return _to_plan_read(session, plan.id)
 
 
@@ -84,6 +94,7 @@ async def create_plan_item(
     session: Session = Depends(get_session),
 ) -> ScheduleTaskItemRead:
     item = add_schedule_task_item(session, plan_id, payload)
+    _refresh_today_tasks(session)
     return ScheduleTaskItemRead.model_validate(item)
 
 
@@ -103,6 +114,7 @@ async def patch_plan_item(
     session: Session = Depends(get_session),
 ) -> ScheduleTaskItemRead:
     item = update_schedule_task_item(session, plan_id, item_id, payload)
+    _refresh_today_tasks(session)
     return ScheduleTaskItemRead.model_validate(item)
 
 
@@ -113,6 +125,7 @@ async def remove_plan_item(
     session: Session = Depends(get_session),
 ) -> Response:
     delete_schedule_task_item(session, plan_id, item_id)
+    _refresh_today_tasks(session)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
@@ -123,6 +136,7 @@ async def put_plan_exception(
     session: Session = Depends(get_session),
 ) -> ScheduleExceptionRead:
     exception = upsert_schedule_exception(session, plan_id, payload)
+    _refresh_today_tasks(session)
     return ScheduleExceptionRead.model_validate(exception)
 
 

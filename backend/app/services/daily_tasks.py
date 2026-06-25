@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from app.models.calendar import DailyTask, ScheduleException, SchedulePlan, ScheduleTaskItem
 from fastapi import HTTPException, status
 
-from app.models.enums import ExceptionType, HolidayDayType, TaskKind
+from app.models.enums import DailyTaskStatus, ExceptionType, HolidayDayType, TaskKind
 from app.schemas.calendar import DailyTaskCorrectionUpdate
 from app.services.holiday_calendar import get_holiday_by_date
 
@@ -180,6 +180,24 @@ def generate_daily_tasks(session: Session, target_date: date) -> tuple[list[Dail
     for task in created:
         session.refresh(task)
     return created, skipped_plan_ids
+
+
+REFRESHABLE_TASK_STATUSES = {
+    DailyTaskStatus.PENDING,
+    DailyTaskStatus.REMINDING,
+    DailyTaskStatus.OVERDUE,
+}
+
+
+def refresh_unstarted_daily_tasks(session: Session, target_date: date) -> tuple[list[DailyTask], list[int]]:
+    statement = select(DailyTask).where(
+        DailyTask.date == target_date,
+        DailyTask.status.in_(REFRESHABLE_TASK_STATUSES),
+    )
+    for task in session.exec(statement):
+        session.delete(task)
+    session.commit()
+    return generate_daily_tasks(session, target_date)
 
 
 def list_daily_tasks(session: Session, target_date: date) -> list[DailyTask]:
