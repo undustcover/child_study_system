@@ -4,7 +4,10 @@ from typing import Any
 from sqlmodel import Session, select
 
 from app.models.calendar import DailyTask, ScheduleException, SchedulePlan, ScheduleTaskItem
+from fastapi import HTTPException, status
+
 from app.models.enums import ExceptionType, HolidayDayType, TaskKind
+from app.schemas.calendar import DailyTaskCorrectionUpdate
 from app.services.holiday_calendar import get_holiday_by_date
 
 
@@ -186,3 +189,26 @@ def list_daily_tasks(session: Session, target_date: date) -> list[DailyTask]:
         .order_by(DailyTask.current_start_at, DailyTask.sort_order, DailyTask.id)
     )
     return list(session.exec(statement))
+
+
+def correct_daily_task(session: Session, task_id: int, payload: DailyTaskCorrectionUpdate) -> DailyTask:
+    task = session.get(DailyTask, task_id)
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="daily task not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    start_at = update_data.get("current_start_at", task.current_start_at)
+    end_at = update_data.get("current_end_at", task.current_end_at)
+    if end_at <= start_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="current_end_at must be later than current_start_at",
+        )
+
+    for key, value in update_data.items():
+        setattr(task, key, value)
+    task.modify_count += 1
+    session.add(task)
+    session.commit()
+    session.refresh(task)
+    return task

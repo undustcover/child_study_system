@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, Query
 from sqlmodel import Session
 
 from app.core.database import get_session
-from app.schemas.calendar import DailyTaskRead, GenerateDailyTasksResult
-from app.services.daily_tasks import generate_daily_tasks, list_daily_tasks
+from app.schemas.calendar import DailyTaskCorrectionUpdate, DailyTaskRead, GenerateDailyTasksResult
+from app.services.daily_tasks import correct_daily_task, generate_daily_tasks, list_daily_tasks
 
 router = APIRouter(prefix="/daily-tasks", tags=["daily tasks"])
 
@@ -31,3 +31,12 @@ async def read_tasks(
     session: Session = Depends(get_session),
 ) -> list[DailyTaskRead]:
     return [DailyTaskRead.model_validate(task) for task in list_daily_tasks(session, target_date)]
+
+
+@router.patch("/{task_id}/correction", response_model=DailyTaskRead)
+async def patch_task_correction(
+    task_id: int,
+    payload: DailyTaskCorrectionUpdate,
+    session: Session = Depends(get_session),
+) -> DailyTaskRead:
+    return DailyTaskRead.model_validate(correct_daily_task(session, task_id, payload))

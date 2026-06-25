@@ -79,6 +79,7 @@ def get_today_dashboard(session: Session, target_date: dt.date | None = None) ->
 def _to_dashboard_task(task: DailyTask) -> DashboardTask:
     return DashboardTask(
         id=task.id or 0,
+        date=task.date,
         start_time=task.current_start_at.strftime("%H:%M"),
         end_time=task.current_end_at.strftime("%H:%M"),
         task_kind=task.task_kind,

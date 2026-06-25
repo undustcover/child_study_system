@@ -144,6 +144,12 @@ class DailyTaskRead(BaseModel):
     modify_count: int
 
 
+class DailyTaskCorrectionUpdate(BaseModel):
+    status: DailyTaskStatus | None = None
+    current_start_at: datetime | None = None
+    current_end_at: datetime | None = None
+
+
 class GenerateDailyTasksResult(BaseModel):
     date: date
     created_count: int

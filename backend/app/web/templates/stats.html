@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>今日统计 - {{ app_name }}</title>
+    <style>
+      :root { color-scheme: light; font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; background: #fff8f3; color: #241915; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff8f3; }
+      .shell { min-height: 100vh; display: grid; grid-template-columns: 168px minmax(0, 1fr); }
+      .sidebar { background: #fff0e7; border-right: 1px solid #edd7c9; padding: 22px 14px; }
+      .brand { margin-bottom: 26px; color: #2e221c; }
+      .brand strong { display: block; font-size: 18px; line-height: 1.35; }
+      .brand span { display: block; margin-top: 6px; font-size: 12px; color: #7b6254; }
+      .nav { display: grid; gap: 8px; }
+      .nav a { height: 38px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; color: #725442; font-size: 14px; font-weight: 700; text-decoration: none; }
+      .nav a.active { background: #e85d3f; color: #ffffff; }
+      .main { min-width: 0; padding: 28px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 26px; line-height: 1.3; }
+      .subtitle { margin-top: 6px; color: #755e52; font-size: 14px; line-height: 1.6; }
+      .stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 20px; }
+      .stat, .panel { border: 1px solid #ead8cc; border-radius: 8px; background: #ffffff; padding: 16px; }
+      .stat b { display: block; font-size: 28px; line-height: 1.2; }
+      .stat span, .row span { display: block; margin-top: 5px; color: #765f53; font-size: 13px; line-height: 1.5; }
+      .panel { margin-top: 16px; }
+      .panel h2 { margin-bottom: 14px; font-size: 17px; }
+      .row { border-radius: 7px; background: #f8eadf; padding: 12px; margin-top: 10px; }
+      .row strong { display: block; font-size: 15px; }
+      .empty { border-radius: 7px; background: #fff8f3; color: #765f53; padding: 14px; font-size: 14px; line-height: 1.6; }
+      @media (max-width: 900px) { .shell, .stats { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); } .nav a { justify-content: center; } }
+      @media (max-width: 640px) { .main { padding: 20px 14px; } .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand"><strong>小朋友<br>学习安排</strong><span>{{ app_version }} · 本机免登录</span></div>
+        <nav class="nav" aria-label="主导航">
+          <a href="/">今日</a><a href="/plans">计划</a><a href="/devices">设备</a><a class="active" href="/stats">统计</a><a href="/corrections">纠错</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <h1>今日统计</h1>
+        <p class="subtitle" id="subtitle">正在读取今日统计...</p>
+        <section class="stats">
+          <div class="stat"><b id="completion-rate">0%</b><span>完成率</span></div>
+          <div class="stat"><b id="completed-count">0</b><span>已完成任务</span></div>
+          <div class="stat"><b id="planned-minutes">0</b><span>计划分钟</span></div>
+          <div class="stat"><b id="effective-minutes">0</b><span>有效学习分钟</span></div>
+        </section>
+        <section class="panel"><h2>任务状态</h2><div id="task-rows"><div class="empty">正在读取任务...</div></div></section>
+        <section class="panel"><h2>科目占比</h2><div id="subject-rows"><div class="empty">正在读取科目...</div></div></section>
+      </main>
+    </div>
+    <script>
+      const labels = { pending:"待开始", reminding:"已提醒", studying:"正在做", paused:"已暂停", waiting_finish_confirm:"待确认", parent_confirm_required:"需家长处理", completed:"已完成", skipped:"已跳过", overdue:"已延迟" };
+      function esc(v) { return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+      async function load() {
+        const data = await fetch("/api/dashboard/today").then(r => r.json());
+        const total = data.tasks.length;
+        const completed = data.tasks.filter(t => t.status === "completed").length;
+        const effective = data.tasks.filter(t => t.status === "completed").reduce((sum, t) => sum + t.planned_minutes, 0);
+        document.querySelector("#subtitle").textContent = `${data.date_label} · ${data.student_name}`;
+        document.querySelector("#completion-rate").textContent = total ? `${Math.round(completed / total * 100)}%` : "0%";
+        document.querySelector("#completed-count").textContent = `${completed}/${total}`;
+        document.querySelector("#planned-minutes").textContent = data.stats.planned_minutes;
+        document.querySelector("#effective-minutes").textContent = effective;
+        document.querySelector("#task-rows").innerHTML = total ? data.tasks.map(t => `<div class="row"><strong>${esc(t.title)} · ${esc(labels[t.status] || t.status)}</strong><span>${esc(t.start_time)}-${esc(t.end_time)} · 计划 ${t.planned_minutes} 分钟</span></div>`).join("") : '<div class="empty">今天还没有任务。</div>';
+        const subjects = {};
+        data.tasks.forEach(t => { const key = t.subject || "未分类"; subjects[key] = (subjects[key] || 0) + t.planned_minutes; });
+        const rows = Object.entries(subjects);
+        document.querySelector("#subject-rows").innerHTML = rows.length ? rows.map(([name, minutes]) => `<div class="row"><strong>${esc(name)}</strong><span>${minutes} 分钟 · ${Math.round(minutes / Math.max(data.stats.planned_minutes, 1) * 100)}%</span></div>`).join("") : '<div class="empty">暂无科目统计。</div>';
+      }
+      load().catch(() => { document.querySelector("#task-rows").innerHTML = '<div class="empty">统计数据加载失败。</div>'; });
+    </script>
+  </body>
+</html>

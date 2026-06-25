@@ -58,6 +58,39 @@ def create_app() -> FastAPI:
             },
         )
 
+    @app.get("/devices", response_class=HTMLResponse)
+    async def devices(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            "devices.html",
+            {
+                "request": request,
+                "app_name": settings.app_name,
+                "app_version": settings.app_version,
+            },
+        )
+
+    @app.get("/stats", response_class=HTMLResponse)
+    async def stats(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            "stats.html",
+            {
+                "request": request,
+                "app_name": settings.app_name,
+                "app_version": settings.app_version,
+            },
+        )
+
+    @app.get("/corrections", response_class=HTMLResponse)
+    async def corrections(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            "corrections.html",
+            {
+                "request": request,
+                "app_name": settings.app_name,
+                "app_version": settings.app_version,
+            },
+        )
+
     return app
 
 

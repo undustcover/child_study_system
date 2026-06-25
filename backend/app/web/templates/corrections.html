@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>家长纠错 - {{ app_name }}</title>
+    <style>
+      :root { color-scheme: light; font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; background: #fff8f3; color: #241915; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff8f3; }
+      button, input, select { font-family: inherit; }
+      button { height: 34px; border: 0; border-radius: 6px; padding: 0 13px; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+      input, select { width: 100%; min-height: 36px; border: 1px solid #ead8cc; border-radius: 6px; padding: 8px 10px; font-size: 14px; background: #ffffff; }
+      label { display: grid; gap: 6px; color: #725442; font-size: 13px; font-weight: 700; }
+      .shell { min-height: 100vh; display: grid; grid-template-columns: 168px minmax(0, 1fr); }
+      .sidebar { background: #fff0e7; border-right: 1px solid #edd7c9; padding: 22px 14px; }
+      .brand { margin-bottom: 26px; color: #2e221c; }
+      .brand strong { display: block; font-size: 18px; line-height: 1.35; }
+      .brand span { display: block; margin-top: 6px; font-size: 12px; color: #7b6254; }
+      .nav { display: grid; gap: 8px; }
+      .nav a { height: 38px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; color: #725442; font-size: 14px; font-weight: 700; text-decoration: none; }
+      .nav a.active { background: #e85d3f; color: #ffffff; }
+      .main { min-width: 0; padding: 28px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 26px; line-height: 1.3; }
+      .subtitle { margin-top: 6px; color: #755e52; font-size: 14px; line-height: 1.6; }
+      .layout { display: grid; grid-template-columns: minmax(320px, 0.9fr) minmax(420px, 1.1fr); gap: 16px; margin-top: 20px; }
+      .panel { border: 1px solid #ead8cc; border-radius: 8px; background: #ffffff; padding: 16px; }
+      .panel h2 { margin-bottom: 14px; font-size: 17px; }
+      .card { border: 1px solid #f0e2d8; border-radius: 7px; background: #fffaf7; padding: 12px; margin-top: 10px; }
+      .card.active { border-color: #e85d3f; background: #fff3ec; }
+      .card strong { display: block; font-size: 15px; line-height: 1.45; }
+      .card span { display: block; margin-top: 4px; color: #765f53; font-size: 13px; line-height: 1.5; }
+      .form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+      .primary { background: #d94f36; color: #ffffff; }
+      .secondary { background: #e8f1ed; color: #255345; }
+      .empty { border-radius: 7px; background: #fff8f3; color: #765f53; padding: 14px; font-size: 14px; line-height: 1.6; }
+      .status { margin-top: 12px; min-height: 22px; color: #755e52; font-size: 13px; }
+      @media (max-width: 900px) { .shell, .layout { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); } .nav a { justify-content: center; } }
+      @media (max-width: 640px) { .main { padding: 20px 14px; } .nav, .form-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand"><strong>小朋友<br>学习安排</strong><span>{{ app_version }} · 本机免登录</span></div>
+        <nav class="nav" aria-label="主导航">
+          <a href="/">今日</a><a href="/plans">计划</a><a href="/devices">设备</a><a href="/stats">统计</a><a class="active" href="/corrections">纠错</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <h1>家长纠错</h1>
+        <p class="subtitle">修正今日任务状态和实际时间；第一版不需要填写原因。</p>
+        <section class="layout">
+          <section class="panel"><h2>今日任务</h2><div id="task-list"><div class="empty">正在读取任务...</div></div></section>
+          <section class="panel">
+            <h2>修正任务</h2>
+            <form id="correction-form">
+              <div class="form-grid">
+                <label>任务状态
+                  <select name="status">
+                    <option value="pending">待开始</option>
+                    <option value="studying">正在做</option>
+                    <option value="paused">已暂停</option>
+                    <option value="waiting_finish_confirm">待确认</option>
+                    <option value="parent_confirm_required">需家长处理</option>
+                    <option value="completed">已完成</option>
+                    <option value="skipped">已跳过</option>
+                    <option value="overdue">已延迟</option>
+                  </select>
+                </label>
+                <label>实际开始时间<input name="current_start_at" type="datetime-local"></label>
+                <label>实际结束时间<input name="current_end_at" type="datetime-local"></label>
+              </div>
+              <p class="subtitle" id="selected-task">先选择一个任务。</p>
+              <button class="primary" type="submit">保存纠错</button>
+              <button class="secondary" type="button" id="reload-button">重新读取</button>
+              <div class="status" id="status"></div>
+            </form>
+          </section>
+        </section>
+      </main>
+    </div>
+    <script>
+      let tasks = [];
+      let selectedTask = null;
+      const labels = { pending:"待开始", reminding:"已提醒", studying:"正在做", paused:"已暂停", waiting_finish_confirm:"待确认", parent_confirm_required:"需家长处理", completed:"已完成", skipped:"已跳过", overdue:"已延迟" };
+      function esc(v) { return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+      function localValue(date, time) { return `${date}T${time}`; }
+      function isoLocal(value) { return value ? new Date(value).toISOString() : null; }
+      async function load() {
+        const data = await fetch("/api/dashboard/today").then(r => r.json());
+        tasks = data.tasks;
+        renderTasks();
+      }
+      function renderTasks() {
+        const list = document.querySelector("#task-list");
+        list.innerHTML = tasks.length ? tasks.map(task => `<div class="card ${selectedTask?.id === task.id ? "active" : ""}" data-task="${task.id}"><strong>${esc(task.title)} · ${esc(task.status_label)}</strong><span>${esc(task.start_time)}-${esc(task.end_time)} · 计划 ${task.planned_minutes} 分钟</span></div>`).join("") : '<div class="empty">今天还没有任务。</div>';
+      }
+      function selectTask(task) {
+        selectedTask = task;
+        document.querySelector("#selected-task").textContent = `正在修正：${task.title}`;
+        document.querySelector('[name="status"]').value = task.status;
+        document.querySelector('[name="current_start_at"]').value = localValue(task.date || new Date().toISOString().slice(0,10), task.start_time);
+        document.querySelector('[name="current_end_at"]').value = localValue(task.date || new Date().toISOString().slice(0,10), task.end_time);
+        renderTasks();
+      }
+      document.addEventListener("click", (event) => {
+        const card = event.target.closest("[data-task]");
+        if (card) selectTask(tasks.find(task => task.id === Number(card.dataset.task)));
+      });
+      document.querySelector("#correction-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!selectedTask) { document.querySelector("#status").textContent = "请先选择一个任务。"; return; }
+        const payload = {
+          status: document.querySelector('[name="status"]').value,
+          current_start_at: isoLocal(document.querySelector('[name="current_start_at"]').value),
+          current_end_at: isoLocal(document.querySelector('[name="current_end_at"]').value),
+        };
+        const response = await fetch(`/api/daily-tasks/${selectedTask.id}/correction`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+        document.querySelector("#status").textContent = response.ok ? "纠错已保存。" : "纠错保存失败。";
+        await load();
+      });
+      document.querySelector("#reload-button").addEventListener("click", load);
+      load().catch(() => { document.querySelector("#task-list").innerHTML = '<div class="empty">任务加载失败。</div>'; });
+    </script>
+  </body>
+</html>

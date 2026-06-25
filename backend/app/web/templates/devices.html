@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>设备状态 - {{ app_name }}</title>
+    <style>
+      :root { color-scheme: light; font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; background: #fff8f3; color: #241915; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff8f3; }
+      .shell { min-height: 100vh; display: grid; grid-template-columns: 168px minmax(0, 1fr); }
+      .sidebar { background: #fff0e7; border-right: 1px solid #edd7c9; padding: 22px 14px; }
+      .brand { margin-bottom: 26px; color: #2e221c; }
+      .brand strong { display: block; font-size: 18px; line-height: 1.35; }
+      .brand span { display: block; margin-top: 6px; font-size: 12px; color: #7b6254; }
+      .nav { display: grid; gap: 8px; }
+      .nav a { height: 38px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; color: #725442; font-size: 14px; font-weight: 700; text-decoration: none; }
+      .nav a.active { background: #e85d3f; color: #ffffff; }
+      .main { min-width: 0; padding: 28px; }
+      h1, h2, p { margin: 0; }
+      h1 { font-size: 26px; line-height: 1.3; }
+      .subtitle { margin-top: 6px; color: #755e52; font-size: 14px; line-height: 1.6; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+      .panel { border: 1px solid #ead8cc; border-radius: 8px; background: #ffffff; padding: 16px; }
+      .panel h2 { margin-bottom: 14px; font-size: 17px; }
+      .card { border-radius: 7px; background: #eef3ef; padding: 12px; margin-top: 10px; }
+      .card strong { display: block; font-size: 15px; line-height: 1.45; }
+      .card span { display: block; margin-top: 4px; color: #765f53; font-size: 13px; line-height: 1.5; }
+      .empty { border-radius: 7px; background: #fff8f3; color: #765f53; padding: 14px; font-size: 14px; line-height: 1.6; }
+      @media (max-width: 900px) { .shell, .grid { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); } .nav a { justify-content: center; } }
+      @media (max-width: 640px) { .main { padding: 20px 14px; } .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand"><strong>小朋友<br>学习安排</strong><span>{{ app_version }} · 本机免登录</span></div>
+        <nav class="nav" aria-label="主导航">
+          <a href="/">今日</a><a href="/plans">计划</a><a class="active" href="/devices">设备</a><a href="/stats">统计</a><a href="/corrections">纠错</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <h1>设备状态</h1>
+        <p class="subtitle">查看 BOX-3/虚拟设备在线状态、计划同步状态和最近播报。</p>
+        <section class="grid">
+          <section class="panel"><h2>设备列表</h2><div id="device-list"><div class="empty">正在读取设备...</div></div></section>
+          <section class="panel"><h2>最近播报</h2><div id="reminder-list"><div class="empty">正在读取播报...</div></div></section>
+        </section>
+      </main>
+    </div>
+    <script>
+      function esc(v) { return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
+      function time(v) { const d = new Date(v); return Number.isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
+      async function load() {
+        const data = await fetch("/api/dashboard/today").then(r => r.json());
+        document.querySelector("#device-list").innerHTML = data.devices.length ? data.devices.map(device => `
+          <div class="card"><strong>${esc(device.device_id)} · ${esc(device.status_label)}</strong><span>${esc(device.hardware_model)} · ${esc(device.sync_label)}</span><span>固件：${esc(device.firmware_version || "未上报")}</span></div>
+        `).join("") : '<div class="empty">还没有设备连接记录。</div>';
+        document.querySelector("#reminder-list").innerHTML = data.reminders.length ? data.reminders.map(item => `
+          <div class="card"><strong>${esc(time(item.scheduled_at))} ${esc(item.status_label)}${esc(item.event_type_label)}</strong><span>${esc(item.message_text)}</span></div>
+        `).join("") : '<div class="empty">今天还没有播报记录。</div>';
+      }
+      load().catch(() => { document.querySelector("#device-list").innerHTML = '<div class="empty">设备数据加载失败。</div>'; });
+    </script>
+  </body>
+</html>

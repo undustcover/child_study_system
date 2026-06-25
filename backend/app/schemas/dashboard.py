@@ -7,6 +7,7 @@ from app.models.enums import DailyTaskStatus, DeviceType, ReminderEventStatus, R
 
 class DashboardTask(BaseModel):
     id: int
+    date: date
     start_time: str
     end_time: str
     task_kind: TaskKind

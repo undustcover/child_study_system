@@ -14,7 +14,8 @@ Current product direction:
 
 ## Current Stage
 
-The project is in stage 7: parent web management console.
+Stage 7 parent web management console is basically complete. The next stage is
+stage 8: P1-A end-to-end acceptance.
 
 Implemented so far:
 
@@ -29,6 +30,7 @@ Implemented so far:
 - Parent console homepage reads `/api/dashboard/today`
 - Parent console calendar plan create/edit page
 - Parent console single-day exceptions, vacation ranges, and holiday sync entries
+- Parent console device, statistics, and correction pages
 - Docker and Docker Compose local deployment files
 - Persistent `data/` directory for SQLite
 

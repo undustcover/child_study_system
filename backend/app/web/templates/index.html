@@ -383,9 +383,9 @@
         <nav class="nav" aria-label="主导航">
           <a class="active" href="#">今日</a>
           <a href="/plans">计划</a>
-          <a href="#">设备</a>
-          <a href="#">统计</a>
-          <a href="#">纠错</a>
+          <a href="/devices">设备</a>
+          <a href="/stats">统计</a>
+          <a href="/corrections">纠错</a>
         </nav>
       </aside>
 
@@ -396,8 +396,8 @@
             <p class="subtitle" id="today-subtitle">正在加载今日数据...</p>
           </div>
           <div class="actions">
-            <button class="secondary" type="button">查看日历</button>
-            <button class="primary" type="button">新建任务</button>
+            <button class="secondary" type="button" onclick="location.href='/plans'">查看日历</button>
+            <button class="primary" type="button" onclick="location.href='/plans'">新建任务</button>
           </div>
         </header>
 
