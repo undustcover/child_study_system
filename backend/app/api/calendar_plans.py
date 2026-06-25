@@ -10,6 +10,7 @@ from app.schemas.calendar import (
     SchedulePlanUpdate,
     ScheduleTaskItemCreate,
     ScheduleTaskItemRead,
+    ScheduleTaskItemUpdate,
 )
 from app.services.calendar_plans import (
     add_schedule_task_item,
@@ -21,6 +22,7 @@ from app.services.calendar_plans import (
     list_schedule_plans,
     list_schedule_task_items,
     update_schedule_plan,
+    update_schedule_task_item,
     upsert_schedule_exception,
 )
 from app.services.students import get_or_create_default_student
@@ -91,6 +93,17 @@ async def read_plan_items(
     session: Session = Depends(get_session),
 ) -> list[ScheduleTaskItemRead]:
     return [ScheduleTaskItemRead.model_validate(item) for item in list_schedule_task_items(session, plan_id)]
+
+
+@router.patch("/{plan_id}/items/{item_id}", response_model=ScheduleTaskItemRead)
+async def patch_plan_item(
+    plan_id: int,
+    item_id: int,
+    payload: ScheduleTaskItemUpdate,
+    session: Session = Depends(get_session),
+) -> ScheduleTaskItemRead:
+    item = update_schedule_task_item(session, plan_id, item_id, payload)
+    return ScheduleTaskItemRead.model_validate(item)
 
 
 @router.delete("/{plan_id}/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)

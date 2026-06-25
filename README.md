@@ -27,6 +27,7 @@ Implemented so far:
 - Parent console visual direction selected as option B: warm family style
 - Parent console static homepage shell
 - Parent console homepage reads `/api/dashboard/today`
+- Parent console calendar plan create/edit page
 - Docker and Docker Compose local deployment files
 - Persistent `data/` directory for SQLite
 

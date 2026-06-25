@@ -1,0 +1,764 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>计划管理 - {{ app_name }}</title>
+    <style>
+      :root {
+        color-scheme: light;
+        font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+        background: #fff8f3;
+        color: #241915;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #fff8f3;
+      }
+
+      button,
+      input,
+      select,
+      textarea {
+        font-family: inherit;
+      }
+
+      button {
+        height: 34px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: 6px;
+        padding: 0 13px;
+        font-size: 14px;
+        font-weight: 700;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      input,
+      select,
+      textarea {
+        width: 100%;
+        border: 1px solid #ead8cc;
+        border-radius: 6px;
+        background: #ffffff;
+        color: #241915;
+        font-size: 14px;
+        min-height: 36px;
+        padding: 8px 10px;
+      }
+
+      textarea {
+        min-height: 74px;
+        resize: vertical;
+      }
+
+      label {
+        display: grid;
+        gap: 6px;
+        color: #725442;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .shell {
+        min-height: 100vh;
+        display: grid;
+        grid-template-columns: 168px minmax(0, 1fr);
+      }
+
+      .sidebar {
+        background: #fff0e7;
+        border-right: 1px solid #edd7c9;
+        padding: 22px 14px;
+      }
+
+      .brand {
+        margin-bottom: 26px;
+        color: #2e221c;
+      }
+
+      .brand strong {
+        display: block;
+        font-size: 18px;
+        line-height: 1.35;
+      }
+
+      .brand span {
+        display: block;
+        margin-top: 6px;
+        font-size: 12px;
+        color: #7b6254;
+      }
+
+      .nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav a {
+        height: 38px;
+        display: flex;
+        align-items: center;
+        padding: 0 12px;
+        border-radius: 6px;
+        color: #725442;
+        font-size: 14px;
+        font-weight: 700;
+        text-decoration: none;
+      }
+
+      .nav a.active {
+        background: #e85d3f;
+        color: #ffffff;
+      }
+
+      .main {
+        min-width: 0;
+        padding: 28px;
+      }
+
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 18px;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+
+      h1,
+      h2,
+      h3,
+      p {
+        margin: 0;
+      }
+
+      h1 {
+        font-size: 26px;
+        line-height: 1.3;
+      }
+
+      .subtitle {
+        margin-top: 6px;
+        color: #755e52;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: minmax(280px, 0.8fr) minmax(520px, 1.4fr);
+        gap: 16px;
+      }
+
+      .panel {
+        border: 1px solid #ead8cc;
+        border-radius: 8px;
+        background: #ffffff;
+        padding: 16px;
+      }
+
+      .panel h2 {
+        margin-bottom: 14px;
+        font-size: 17px;
+      }
+
+      .primary {
+        background: #d94f36;
+        color: #ffffff;
+      }
+
+      .secondary {
+        background: #e8f1ed;
+        color: #255345;
+      }
+
+      .quiet {
+        background: #f8eadf;
+        color: #725442;
+      }
+
+      .danger {
+        background: #f3ded6;
+        color: #9d321f;
+      }
+
+      .list {
+        display: grid;
+        gap: 10px;
+      }
+
+      .plan-card,
+      .item-card {
+        border: 1px solid #f0e2d8;
+        border-radius: 7px;
+        background: #fffaf7;
+        padding: 12px;
+      }
+
+      .plan-card.active {
+        border-color: #e85d3f;
+        background: #fff3ec;
+      }
+
+      .plan-card strong,
+      .item-card strong {
+        display: block;
+        font-size: 15px;
+        line-height: 1.45;
+      }
+
+      .meta {
+        margin-top: 5px;
+        color: #765f53;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .row-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      .full {
+        grid-column: 1 / -1;
+      }
+
+      .checks {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .check {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        border-radius: 999px;
+        background: #f8eadf;
+        padding: 8px 11px;
+        color: #5f493d;
+        font-size: 13px;
+        font-weight: 700;
+      }
+
+      .check input {
+        width: auto;
+        min-height: 0;
+      }
+
+      .divider {
+        height: 1px;
+        background: #f0e2d8;
+        margin: 16px 0;
+      }
+
+      .status {
+        min-height: 22px;
+        margin-top: 12px;
+        color: #755e52;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .empty {
+        border-radius: 7px;
+        background: #fff8f3;
+        color: #765f53;
+        padding: 14px;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+
+      @media (max-width: 1080px) {
+        .shell,
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .sidebar {
+          border-right: 0;
+          border-bottom: 1px solid #edd7c9;
+        }
+
+        .nav {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+
+        .nav a {
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .main {
+          padding: 20px 14px;
+        }
+
+        .topbar,
+        .form-grid {
+          display: block;
+        }
+
+        .form-grid label,
+        .full {
+          margin-bottom: 12px;
+        }
+
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <strong>小朋友<br>学习安排</strong>
+          <span>{{ app_version }} · 本机免登录</span>
+        </div>
+        <nav class="nav" aria-label="主导航">
+          <a href="/">今日</a>
+          <a class="active" href="/plans">计划</a>
+          <a href="#">设备</a>
+          <a href="#">统计</a>
+          <a href="#">纠错</a>
+        </nav>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <h1>日历计划</h1>
+            <p class="subtitle">创建手机闹钟式重复计划，并维护每天要执行的学习和休息任务。</p>
+          </div>
+          <button class="primary" type="button" id="new-plan-button">新建计划</button>
+        </header>
+
+        <section class="layout">
+          <section class="panel">
+            <h2>已有计划</h2>
+            <div class="list" id="plan-list">
+              <div class="empty">正在读取计划...</div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2 id="form-title">新建计划</h2>
+            <form id="plan-form">
+              <div class="form-grid">
+                <label>
+                  计划名称
+                  <input name="name" required placeholder="例如：上学日上午计划">
+                </label>
+                <label>
+                  是否启用
+                  <select name="is_active">
+                    <option value="true">启用</option>
+                    <option value="false">停用</option>
+                  </select>
+                </label>
+                <label>
+                  开始日期
+                  <input name="start_date" type="date" required>
+                </label>
+                <label>
+                  结束日期
+                  <input name="end_date" type="date" required>
+                </label>
+                <div class="full">
+                  <label>每周重复</label>
+                  <div class="checks" id="weekday-checks">
+                    <label class="check"><input type="checkbox" value="1">周一</label>
+                    <label class="check"><input type="checkbox" value="2">周二</label>
+                    <label class="check"><input type="checkbox" value="3">周三</label>
+                    <label class="check"><input type="checkbox" value="4">周四</label>
+                    <label class="check"><input type="checkbox" value="5">周五</label>
+                    <label class="check"><input type="checkbox" value="6">周六</label>
+                    <label class="check"><input type="checkbox" value="7">周日</label>
+                  </div>
+                </div>
+                <div class="full checks">
+                  <label class="check"><input name="skip_public_holidays" type="checkbox">法定节假日自动跳过</label>
+                  <label class="check"><input name="run_in_winter_vacation" type="checkbox" checked>寒假执行</label>
+                  <label class="check"><input name="run_in_summer_vacation" type="checkbox" checked>暑假执行</label>
+                </div>
+              </div>
+              <div class="row-actions">
+                <button class="primary" type="submit">保存计划</button>
+                <button class="secondary" type="button" id="reset-plan-button">清空表单</button>
+                <button class="danger" type="button" id="deactivate-plan-button">停用计划</button>
+              </div>
+              <div class="status" id="plan-status"></div>
+            </form>
+
+            <div class="divider"></div>
+
+            <h2>任务项</h2>
+            <div class="list" id="item-list">
+              <div class="empty">先选择或创建一个计划。</div>
+            </div>
+
+            <div class="divider"></div>
+
+            <h2 id="item-form-title">添加任务项</h2>
+            <form id="item-form">
+              <div class="form-grid">
+                <label>
+                  类型
+                  <select name="task_kind">
+                    <option value="study">学习</option>
+                    <option value="practice">练习</option>
+                    <option value="review">复习</option>
+                    <option value="homework">作业</option>
+                    <option value="recitation">背诵</option>
+                    <option value="reading">阅读</option>
+                    <option value="break">休息</option>
+                  </select>
+                </label>
+                <label>
+                  科目
+                  <input name="subject" placeholder="例如：数学">
+                </label>
+                <label class="full">
+                  标题
+                  <input name="title" required placeholder="例如：口算练习">
+                </label>
+                <label class="full">
+                  内容
+                  <textarea name="content" placeholder="补充说明，可不填"></textarea>
+                </label>
+                <label>
+                  开始时间
+                  <input name="planned_start_time" type="time" required>
+                </label>
+                <label>
+                  结束时间
+                  <input name="planned_end_time" type="time" required>
+                </label>
+                <label>
+                  计划分钟
+                  <input name="planned_minutes" type="number" min="1" required>
+                </label>
+                <label>
+                  排序
+                  <input name="sort_order" type="number" value="1">
+                </label>
+                <div class="full checks">
+                  <label class="check"><input name="remind_enabled" type="checkbox" checked>启用提醒</label>
+                </div>
+              </div>
+              <div class="row-actions">
+                <button class="primary" type="submit">保存任务项</button>
+                <button class="secondary" type="button" id="reset-item-button">清空任务项</button>
+              </div>
+              <div class="status" id="item-status"></div>
+            </form>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <script>
+      let plans = [];
+      let selectedPlanId = null;
+      let editingItemId = null;
+
+      const planForm = document.querySelector("#plan-form");
+      const itemForm = document.querySelector("#item-form");
+
+      const taskKindLabels = {
+        study: "学习",
+        practice: "练习",
+        review: "复习",
+        homework: "作业",
+        recitation: "背诵",
+        reading: "阅读",
+        break: "休息",
+      };
+
+      function escapeHtml(value) {
+        return String(value ?? "")
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
+
+      function setStatus(id, text) {
+        document.querySelector(id).textContent = text;
+      }
+
+      function selectedPlan() {
+        return plans.find((plan) => plan.id === selectedPlanId) || null;
+      }
+
+      function weekdayValues() {
+        return Array.from(document.querySelectorAll("#weekday-checks input:checked")).map((input) => Number(input.value));
+      }
+
+      function setWeekdays(values) {
+        const set = new Set(values || []);
+        document.querySelectorAll("#weekday-checks input").forEach((input) => {
+          input.checked = set.has(Number(input.value));
+        });
+      }
+
+      function planPayload() {
+        const data = new FormData(planForm);
+        return {
+          name: data.get("name"),
+          start_date: data.get("start_date"),
+          end_date: data.get("end_date"),
+          repeat_rule: { weekdays: weekdayValues() },
+          skip_public_holidays: planForm.elements.skip_public_holidays.checked,
+          run_in_winter_vacation: planForm.elements.run_in_winter_vacation.checked,
+          run_in_summer_vacation: planForm.elements.run_in_summer_vacation.checked,
+          is_active: data.get("is_active") === "true",
+        };
+      }
+
+      function itemPayload() {
+        const data = new FormData(itemForm);
+        const subject = data.get("subject").trim();
+        const content = data.get("content").trim();
+        return {
+          task_kind: data.get("task_kind"),
+          subject: subject || null,
+          title: data.get("title").trim(),
+          content: content || null,
+          planned_start_time: data.get("planned_start_time"),
+          planned_end_time: data.get("planned_end_time"),
+          planned_minutes: Number(data.get("planned_minutes")),
+          sort_order: Number(data.get("sort_order") || 0),
+          remind_enabled: itemForm.elements.remind_enabled.checked,
+          pre_remind_minutes: 5,
+        };
+      }
+
+      async function api(path, options = {}) {
+        const response = await fetch(path, {
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+          ...options,
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${response.status}`);
+        }
+        if (response.status === 204) {
+          return null;
+        }
+        return response.json();
+      }
+
+      async function loadPlans() {
+        plans = await api("/api/calendar-plans");
+        if (!selectedPlanId && plans.length) {
+          selectedPlanId = plans[0].id;
+        }
+        renderPlans();
+        fillPlanForm(selectedPlan());
+        renderItems();
+      }
+
+      function renderPlans() {
+        const container = document.querySelector("#plan-list");
+        if (!plans.length) {
+          container.innerHTML = '<div class="empty">还没有计划。可以从右侧创建第一个计划。</div>';
+          return;
+        }
+        container.innerHTML = plans.map((plan) => `
+          <article class="plan-card ${plan.id === selectedPlanId ? "active" : ""}">
+            <strong>${escapeHtml(plan.name)}</strong>
+            <div class="meta">${escapeHtml(plan.start_date)} 到 ${escapeHtml(plan.end_date)} · ${plan.is_active ? "启用" : "停用"} · ${plan.items.length} 个任务</div>
+            <div class="meta">重复：${weekdayLabel(plan.repeat_rule.weekdays || [])}</div>
+            <div class="row-actions">
+              <button class="secondary" type="button" data-select-plan="${plan.id}">编辑</button>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      function weekdayLabel(values) {
+        const labels = { 1: "周一", 2: "周二", 3: "周三", 4: "周四", 5: "周五", 6: "周六", 7: "周日" };
+        return values.length ? values.map((value) => labels[value]).join("、") : "未设置";
+      }
+
+      function fillPlanForm(plan) {
+        document.querySelector("#form-title").textContent = plan ? "编辑计划" : "新建计划";
+        document.querySelector("#deactivate-plan-button").style.display = plan ? "inline-flex" : "none";
+        if (!plan) {
+          planForm.reset();
+          planForm.elements.is_active.value = "true";
+          planForm.elements.run_in_winter_vacation.checked = true;
+          planForm.elements.run_in_summer_vacation.checked = true;
+          setWeekdays([1, 2, 3, 4, 5]);
+          return;
+        }
+        planForm.elements.name.value = plan.name;
+        planForm.elements.start_date.value = plan.start_date;
+        planForm.elements.end_date.value = plan.end_date;
+        planForm.elements.is_active.value = String(plan.is_active);
+        planForm.elements.skip_public_holidays.checked = plan.skip_public_holidays;
+        planForm.elements.run_in_winter_vacation.checked = plan.run_in_winter_vacation;
+        planForm.elements.run_in_summer_vacation.checked = plan.run_in_summer_vacation;
+        setWeekdays(plan.repeat_rule.weekdays || []);
+      }
+
+      function renderItems() {
+        const container = document.querySelector("#item-list");
+        const plan = selectedPlan();
+        if (!plan) {
+          container.innerHTML = '<div class="empty">先选择或创建一个计划。</div>';
+          return;
+        }
+        if (!plan.items.length) {
+          container.innerHTML = '<div class="empty">这个计划还没有任务项。</div>';
+          return;
+        }
+        container.innerHTML = plan.items.map((item) => `
+          <article class="item-card">
+            <strong>${escapeHtml(item.title)}</strong>
+            <div class="meta">${escapeHtml(item.planned_start_time.slice(0, 5))}-${escapeHtml(item.planned_end_time.slice(0, 5))} · ${escapeHtml(taskKindLabels[item.task_kind] || item.task_kind)} · 计划 ${item.planned_minutes} 分钟</div>
+            <div class="meta">${escapeHtml(item.subject || "无科目")} ${item.content ? "· " + escapeHtml(item.content) : ""}</div>
+            <div class="row-actions">
+              <button class="secondary" type="button" data-edit-item="${item.id}">编辑任务</button>
+              <button class="danger" type="button" data-delete-item="${item.id}">删除任务</button>
+            </div>
+          </article>
+        `).join("");
+      }
+
+      function fillItemForm(item) {
+        editingItemId = item ? item.id : null;
+        document.querySelector("#item-form-title").textContent = item ? "编辑任务项" : "添加任务项";
+        itemForm.reset();
+        itemForm.elements.remind_enabled.checked = true;
+        itemForm.elements.sort_order.value = selectedPlan()?.items.length + 1 || 1;
+        if (!item) {
+          return;
+        }
+        itemForm.elements.task_kind.value = item.task_kind;
+        itemForm.elements.subject.value = item.subject || "";
+        itemForm.elements.title.value = item.title;
+        itemForm.elements.content.value = item.content || "";
+        itemForm.elements.planned_start_time.value = item.planned_start_time.slice(0, 5);
+        itemForm.elements.planned_end_time.value = item.planned_end_time.slice(0, 5);
+        itemForm.elements.planned_minutes.value = item.planned_minutes;
+        itemForm.elements.sort_order.value = item.sort_order;
+        itemForm.elements.remind_enabled.checked = item.remind_enabled;
+      }
+
+      planForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const payload = planPayload();
+          if (selectedPlanId) {
+            await api(`/api/calendar-plans/${selectedPlanId}`, { method: "PATCH", body: JSON.stringify(payload) });
+            setStatus("#plan-status", "计划已保存。");
+          } else {
+            const created = await api("/api/calendar-plans", { method: "POST", body: JSON.stringify({ ...payload, items: [] }) });
+            selectedPlanId = created.id;
+            setStatus("#plan-status", "计划已创建。");
+          }
+          await loadPlans();
+        } catch (error) {
+          setStatus("#plan-status", `保存失败：${error.message}`);
+        }
+      });
+
+      itemForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!selectedPlanId) {
+          setStatus("#item-status", "请先选择或创建一个计划。");
+          return;
+        }
+        try {
+          const payload = itemPayload();
+          if (editingItemId) {
+            await api(`/api/calendar-plans/${selectedPlanId}/items/${editingItemId}`, { method: "PATCH", body: JSON.stringify(payload) });
+            setStatus("#item-status", "任务项已保存。");
+          } else {
+            await api(`/api/calendar-plans/${selectedPlanId}/items`, { method: "POST", body: JSON.stringify(payload) });
+            setStatus("#item-status", "任务项已添加。");
+          }
+          fillItemForm(null);
+          await loadPlans();
+        } catch (error) {
+          setStatus("#item-status", `保存失败：${error.message}`);
+        }
+      });
+
+      document.addEventListener("click", async (event) => {
+        const selectButton = event.target.closest("[data-select-plan]");
+        const editButton = event.target.closest("[data-edit-item]");
+        const deleteButton = event.target.closest("[data-delete-item]");
+        if (selectButton) {
+          selectedPlanId = Number(selectButton.dataset.selectPlan);
+          setStatus("#plan-status", "");
+          setStatus("#item-status", "");
+          renderPlans();
+          fillPlanForm(selectedPlan());
+          fillItemForm(null);
+          renderItems();
+        }
+        if (editButton) {
+          const item = selectedPlan()?.items.find((candidate) => candidate.id === Number(editButton.dataset.editItem));
+          fillItemForm(item);
+        }
+        if (deleteButton && selectedPlanId) {
+          await api(`/api/calendar-plans/${selectedPlanId}/items/${deleteButton.dataset.deleteItem}`, { method: "DELETE" });
+          setStatus("#item-status", "任务项已删除。");
+          await loadPlans();
+        }
+      });
+
+      document.querySelector("#new-plan-button").addEventListener("click", () => {
+        selectedPlanId = null;
+        fillPlanForm(null);
+        fillItemForm(null);
+        renderPlans();
+        renderItems();
+      });
+
+      document.querySelector("#reset-plan-button").addEventListener("click", () => {
+        selectedPlanId = null;
+        fillPlanForm(null);
+        renderPlans();
+      });
+
+      document.querySelector("#reset-item-button").addEventListener("click", () => fillItemForm(null));
+
+      document.querySelector("#deactivate-plan-button").addEventListener("click", async () => {
+        if (!selectedPlanId) {
+          return;
+        }
+        await api(`/api/calendar-plans/${selectedPlanId}/deactivate`, { method: "POST" });
+        setStatus("#plan-status", "计划已停用。");
+        await loadPlans();
+      });
+
+      loadPlans().catch((error) => {
+        document.querySelector("#plan-list").innerHTML = '<div class="empty">计划加载失败。</div>';
+        setStatus("#plan-status", `加载失败：${error.message}`);
+      });
+    </script>
+  </body>
+</html>

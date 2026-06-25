@@ -26,6 +26,19 @@ class ScheduleTaskItemCreate(BaseModel):
     pre_remind_minutes: int = Field(default=5, ge=0)
 
 
+class ScheduleTaskItemUpdate(BaseModel):
+    sort_order: int | None = None
+    task_kind: TaskKind | None = None
+    subject: str | None = None
+    title: str | None = None
+    content: str | None = None
+    planned_start_time: time | None = None
+    planned_end_time: time | None = None
+    planned_minutes: int | None = Field(default=None, gt=0)
+    remind_enabled: bool | None = None
+    pre_remind_minutes: int | None = Field(default=None, ge=0)
+
+
 class ScheduleTaskItemRead(ScheduleTaskItemCreate):
     model_config = ConfigDict(from_attributes=True)
 

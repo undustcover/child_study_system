@@ -9,6 +9,7 @@ from app.schemas.calendar import (
     SchedulePlanCreate,
     SchedulePlanUpdate,
     ScheduleTaskItemCreate,
+    ScheduleTaskItemUpdate,
 )
 
 
@@ -131,6 +132,44 @@ def add_schedule_task_item(
         )
 
     item = ScheduleTaskItem(schedule_plan_id=plan_id, **payload.model_dump())
+    session.add(item)
+    session.commit()
+    session.refresh(item)
+    return item
+
+
+def update_schedule_task_item(
+    session: Session,
+    plan_id: int,
+    item_id: int,
+    payload: ScheduleTaskItemUpdate,
+) -> ScheduleTaskItem:
+    get_schedule_plan(session, plan_id)
+    item = session.get(ScheduleTaskItem, item_id)
+    if not item or item.schedule_plan_id != plan_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="schedule task item not found")
+
+    update_data = payload.model_dump(exclude_unset=True)
+    start_time = update_data.get("planned_start_time", item.planned_start_time)
+    end_time = update_data.get("planned_end_time", item.planned_end_time)
+    if end_time <= start_time:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="planned_end_time must be later than planned_start_time",
+        )
+    duplicate_statement = select(ScheduleTaskItem).where(
+        ScheduleTaskItem.schedule_plan_id == plan_id,
+        ScheduleTaskItem.planned_start_time == start_time,
+        ScheduleTaskItem.id != item_id,
+    )
+    if session.exec(duplicate_statement).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="schedule task items cannot share the same planned_start_time",
+        )
+
+    for key, value in update_data.items():
+        setattr(item, key, value)
     session.add(item)
     session.commit()
     session.refresh(item)

@@ -47,6 +47,17 @@ def create_app() -> FastAPI:
             },
         )
 
+    @app.get("/plans", response_class=HTMLResponse)
+    async def plans(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            "plans.html",
+            {
+                "request": request,
+                "app_name": settings.app_name,
+                "app_version": settings.app_version,
+            },
+        )
+
     return app
 
 
