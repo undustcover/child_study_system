@@ -12,6 +12,9 @@ from app.device.protocol import (
     build_sync_state_message,
 )
 from app.services.devices import (
+    build_today_plan_speak_text,
+    get_device,
+    get_effective_device_settings,
     handle_device_voice_command,
     build_today_plan_payload,
     mark_device_disconnected,
@@ -41,6 +44,8 @@ async def device_ws(
             message_type = payload.get("type")
 
             if message_type == DeviceMessageType.DEVICE_HELLO:
+                existing_device = get_device(session, device_id)
+                is_reconnect = existing_device is not None and existing_device.disconnected_at is not None
                 device = register_or_update_device(
                     session,
                     device_id,
@@ -58,11 +63,18 @@ async def device_ws(
                         },
                     )
                 )
+                settings, _ = get_effective_device_settings(session, device_id)
                 today = dt.date.today()
-                await websocket.send_json(
-                    build_sync_state_message(device_id, "today_plan", build_today_plan_payload(session, today))
+                if settings.auto_sync_today_plan:
+                    await websocket.send_json(
+                        build_sync_state_message(device_id, "today_plan", build_today_plan_payload(session, today))
+                    )
+                    mark_device_plan_synced(session, device_id, today)
+                should_broadcast_today_plan = settings.auto_broadcast_today_plan and (
+                    not is_reconnect or settings.replay_today_plan_on_reconnect
                 )
-                mark_device_plan_synced(session, device_id, today)
+                if should_broadcast_today_plan:
+                    await websocket.send_json(build_speak_message(build_today_plan_speak_text(session, today)))
                 await _push_pending_speak_events(websocket, session, device_id)
                 continue
 
@@ -89,6 +101,11 @@ async def device_ws(
                         result.model_dump(mode="json"),
                     )
                 )
+                if payload.get("command") == "QUERY_TODAY_PLAN":
+                    target_date = payload.get("target_date") or dt.date.today()
+                    if isinstance(target_date, str):
+                        target_date = dt.date.fromisoformat(target_date)
+                    await websocket.send_json(build_speak_message(build_today_plan_speak_text(session, target_date)))
                 continue
 
             if message_type == DeviceMessageType.PLAYBACK_FINISHED:

@@ -3,11 +3,16 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>设备状态 - {{ app_name }}</title>
+    <title>设备状态与设置 - {{ app_name }}</title>
     <style>
       :root { color-scheme: light; font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; background: #fff8f3; color: #241915; }
       * { box-sizing: border-box; }
       body { margin: 0; background: #fff8f3; }
+      h1, h2, p { margin: 0; }
+      button, input { font-family: inherit; }
+      button { height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; padding: 0 14px; font-size: 14px; font-weight: 700; cursor: pointer; }
+      .primary { background: #d94f36; color: #fff; }
+      .secondary { background: #e8f1ed; color: #255345; }
       .shell { min-height: 100vh; display: grid; grid-template-columns: 168px minmax(0, 1fr); }
       .sidebar { background: #fff0e7; border-right: 1px solid #edd7c9; padding: 22px 14px; }
       .brand { margin-bottom: 26px; color: #2e221c; }
@@ -15,19 +20,26 @@
       .brand span { display: block; margin-top: 6px; font-size: 12px; color: #7b6254; }
       .nav { display: grid; gap: 8px; }
       .nav a { height: 38px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; color: #725442; font-size: 14px; font-weight: 700; text-decoration: none; }
-      .nav a.active { background: #e85d3f; color: #ffffff; }
+      .nav a.active { background: #e85d3f; color: #fff; }
       .main { min-width: 0; padding: 28px; }
-      h1, h2, p { margin: 0; }
-      h1 { font-size: 26px; line-height: 1.3; }
       .subtitle { margin-top: 6px; color: #755e52; font-size: 14px; line-height: 1.6; }
       .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
-      .panel { border: 1px solid #ead8cc; border-radius: 8px; background: #ffffff; padding: 16px; }
+      .span-two { grid-column: 1 / -1; }
+      .panel { border: 1px solid #ead8cc; border-radius: 8px; background: #fff; padding: 16px; }
       .panel h2 { margin-bottom: 14px; font-size: 17px; }
       .card { border-radius: 7px; background: #eef3ef; padding: 12px; margin-top: 10px; }
       .card strong { display: block; font-size: 15px; line-height: 1.45; }
       .card span { display: block; margin-top: 4px; color: #765f53; font-size: 13px; line-height: 1.5; }
       .empty { border-radius: 7px; background: #fff8f3; color: #765f53; padding: 14px; font-size: 14px; line-height: 1.6; }
-      @media (max-width: 900px) { .shell, .grid { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); } .nav a { justify-content: center; } }
+      .summary { border-radius: 7px; background: #fff8f3; color: #765f53; padding: 12px; font-size: 13px; line-height: 1.7; }
+      .form { display: grid; gap: 12px; }
+      .check { display: flex; gap: 10px; align-items: flex-start; border-radius: 7px; background: #fff8f3; padding: 12px; color: #5f493d; }
+      .check input { margin-top: 2px; }
+      .check strong { display: block; font-size: 14px; }
+      .check span { display: block; margin-top: 4px; font-size: 13px; line-height: 1.5; color: #7a6154; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+      .status { min-height: 22px; color: #755e52; font-size: 13px; line-height: 1.6; }
+      @media (max-width: 900px) { .shell, .grid { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); } .nav a { justify-content: center; } .span-two { grid-column: auto; } }
       @media (max-width: 640px) { .main { padding: 20px 14px; } .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     </style>
   </head>
@@ -36,31 +48,133 @@
       <aside class="sidebar">
         <div class="brand"><strong>小朋友<br>学习安排</strong><span>{{ app_version }} · 本机免登录</span></div>
         <nav class="nav" aria-label="主导航">
-          <a href="/">今日</a><a href="/plans">计划</a><a class="active" href="/devices">设备</a><a href="/stats">统计</a><a href="/corrections">纠错</a>
+          <a href="/">今日</a><a href="/plans">计划</a><a class="active" href="/devices">设备</a><a href="/stats">统计</a><a href="/corrections">纠错</a><a href="/language">语言</a>
         </nav>
       </aside>
       <main class="main">
-        <h1>设备状态</h1>
-        <p class="subtitle">查看 BOX-3/虚拟设备在线状态、计划同步状态和最近播报。</p>
+        <h1>设备状态与设置</h1>
+        <p class="subtitle">查看 BOX-3/虚拟设备在线状态，并维护设备连接后的默认同步与播报策略。</p>
         <section class="grid">
-          <section class="panel"><h2>设备列表</h2><div id="device-list"><div class="empty">正在读取设备...</div></div></section>
-          <section class="panel"><h2>最近播报</h2><div id="reminder-list"><div class="empty">正在读取播报...</div></div></section>
+          <section class="panel">
+            <h2>设备列表</h2>
+            <div id="device-list"><div class="empty">正在读取设备...</div></div>
+          </section>
+          <section class="panel">
+            <h2>默认设备设置</h2>
+            <div class="summary" id="settings-summary">正在读取设置...</div>
+            <form class="form" id="settings-form">
+              <label class="check">
+                <input name="auto_sync_today_plan" type="checkbox">
+                <span><strong>连接后自动同步今日计划</strong><span>设备注册成功后，后端立即把当天计划推送给设备缓存。</span></span>
+              </label>
+              <label class="check">
+                <input name="auto_broadcast_today_plan" type="checkbox">
+                <span><strong>连接后自动播报今日计划</strong><span>设备上线后自动播报今天剩余安排，方便孩子直接了解任务。</span></span>
+              </label>
+              <label class="check">
+                <input name="replay_today_plan_on_reconnect" type="checkbox">
+                <span><strong>断线重连后重播今日计划</strong><span>如果设备中途离线并重新连接，允许再次播报当天计划。</span></span>
+              </label>
+              <div class="actions">
+                <button class="primary" type="submit">保存设置</button>
+                <button class="secondary" type="button" id="reload-settings">重新读取</button>
+              </div>
+              <div class="status" id="settings-status"></div>
+            </form>
+          </section>
+          <section class="panel span-two">
+            <h2>最近播报</h2>
+            <div id="reminder-list"><div class="empty">正在读取播报...</div></div>
+          </section>
         </section>
       </main>
     </div>
     <script>
+      const settingsForm = document.querySelector("#settings-form");
+
       function esc(v) { return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;"); }
       function time(v) { const d = new Date(v); return Number.isNaN(d.getTime()) ? "" : `${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`; }
-      async function load() {
-        const data = await fetch("/api/dashboard/today").then(r => r.json());
+      function setStatus(id, text) { document.querySelector(id).textContent = text; }
+
+      async function api(path, options = {}) {
+        const response = await fetch(path, {
+          headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+          ...options,
+        });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${response.status}`);
+        }
+        return response.json();
+      }
+
+      function renderSettings(settings) {
+        settingsForm.elements.auto_sync_today_plan.checked = settings.auto_sync_today_plan;
+        settingsForm.elements.auto_broadcast_today_plan.checked = settings.auto_broadcast_today_plan;
+        settingsForm.elements.replay_today_plan_on_reconnect.checked = settings.replay_today_plan_on_reconnect;
+        document.querySelector("#settings-summary").innerHTML = `
+          <strong>当前默认策略</strong><br>
+          自动同步今日计划：${settings.auto_sync_today_plan ? "开启" : "关闭"}<br>
+          连接后自动播报：${settings.auto_broadcast_today_plan ? "开启" : "关闭"}<br>
+          断线重连后重播：${settings.replay_today_plan_on_reconnect ? "开启" : "关闭"}<br>
+          最近更新时间：${esc(time(settings.updated_at) || "刚刚")}
+        `;
+      }
+
+      async function loadSettings() {
+        const settings = await api("/api/devices/settings/default");
+        renderSettings(settings);
+      }
+
+      async function loadDashboard() {
+        const data = await api("/api/dashboard/today");
         document.querySelector("#device-list").innerHTML = data.devices.length ? data.devices.map(device => `
-          <div class="card"><strong>${esc(device.device_id)} · ${esc(device.status_label)}</strong><span>${esc(device.hardware_model)} · ${esc(device.sync_label)}</span><span>固件：${esc(device.firmware_version || "未上报")}</span></div>
+          <div class="card">
+            <strong>${esc(device.device_id)} · ${esc(device.status_label)}</strong>
+            <span>${esc(device.hardware_model)} · ${esc(device.sync_label)}</span>
+            <span>固件：${esc(device.firmware_version || "未上报")}</span>
+          </div>
         `).join("") : '<div class="empty">还没有设备连接记录。</div>';
         document.querySelector("#reminder-list").innerHTML = data.reminders.length ? data.reminders.map(item => `
-          <div class="card"><strong>${esc(time(item.scheduled_at))} ${esc(item.status_label)}${esc(item.event_type_label)}</strong><span>${esc(item.message_text)}</span></div>
+          <div class="card">
+            <strong>${esc(time(item.scheduled_at))} ${esc(item.status_label)}${esc(item.event_type_label)}</strong>
+            <span>${esc(item.message_text)}</span>
+          </div>
         `).join("") : '<div class="empty">今天还没有播报记录。</div>';
       }
-      load().catch(() => { document.querySelector("#device-list").innerHTML = '<div class="empty">设备数据加载失败。</div>'; });
+
+      settingsForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          const payload = {
+            auto_sync_today_plan: settingsForm.elements.auto_sync_today_plan.checked,
+            auto_broadcast_today_plan: settingsForm.elements.auto_broadcast_today_plan.checked,
+            replay_today_plan_on_reconnect: settingsForm.elements.replay_today_plan_on_reconnect.checked,
+          };
+          const saved = await api("/api/devices/settings/default", {
+            method: "PUT",
+            body: JSON.stringify(payload),
+          });
+          renderSettings(saved);
+          setStatus("#settings-status", "设备设置已保存。");
+        } catch (error) {
+          setStatus("#settings-status", `保存失败：${error.message}`);
+        }
+      });
+
+      document.querySelector("#reload-settings").addEventListener("click", async () => {
+        try {
+          await loadSettings();
+          setStatus("#settings-status", "已重新读取最新设置。");
+        } catch (error) {
+          setStatus("#settings-status", `读取失败：${error.message}`);
+        }
+      });
+
+      Promise.all([loadDashboard(), loadSettings()]).catch(() => {
+        document.querySelector("#device-list").innerHTML = '<div class="empty">设备数据加载失败。</div>';
+        document.querySelector("#settings-summary").textContent = "设备设置加载失败。";
+      });
     </script>
   </body>
 </html>

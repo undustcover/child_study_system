@@ -11,6 +11,9 @@ import platform
 import subprocess
 import sys
 from typing import Any
+from urllib.error import URLError
+from urllib.parse import urlparse, urlunparse
+from urllib.request import urlopen
 
 import websockets
 
@@ -25,13 +28,46 @@ def load_config(path: Path) -> dict[str, Any]:
         return json.load(file)
 
 
+def load_backend_language_settings(config: dict[str, Any], ws_url: str) -> dict[str, Any] | None:
+    language_config = config.get("language", {})
+    if language_config.get("sync_from_backend") is False:
+        return None
+    settings_url = language_config.get("settings_url") or _language_settings_url_from_ws(ws_url)
+    try:
+        with urlopen(settings_url, timeout=3) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except (OSError, URLError, json.JSONDecodeError) as exc:
+        print(f"无法同步后端语言配置，继续使用本地配置：{exc}", file=sys.stderr)
+        return None
+
+
+def apply_backend_language_settings(config: dict[str, Any], settings: dict[str, Any] | None) -> None:
+    if not settings:
+        return
+    language = config.setdefault("language", {})
+    for key in ("virtual_reply_templates", "command_phrases", "command_labels"):
+        value = settings.get(key)
+        if isinstance(value, dict):
+            language[key] = value
+
+
+def _language_settings_url_from_ws(ws_url: str) -> str:
+    parsed = urlparse(ws_url)
+    scheme = "https" if parsed.scheme == "wss" else "http"
+    return urlunparse((scheme, parsed.netloc, "/api/language-settings", "", "", ""))
+
+
 class SafeTemplateValues(dict[str, Any]):
     def __missing__(self, key: str) -> str:
         return "{" + key + "}"
 
 
 def render_template(config: dict[str, Any], key: str, **values: Any) -> str:
-    template = config.get("reply_templates", {}).get(key, key)
+    template = (
+        config.get("language", {})
+        .get("virtual_reply_templates", config.get("reply_templates", {}))
+        .get(key, key)
+    )
     today = datetime.now().date().isoformat()
     template_values = SafeTemplateValues(
         {
@@ -52,7 +88,12 @@ def render_template(config: dict[str, Any], key: str, **values: Any) -> str:
 def command_label(config: dict[str, Any], command: str | None) -> str:
     if not command:
         return ""
-    return config.get("intent_parser", {}).get("commands", {}).get(command, {}).get("label", command)
+    return (
+        config.get("language", {})
+        .get("command_labels", {})
+        .get(command)
+        or config.get("intent_parser", {}).get("commands", {}).get(command, {}).get("label", command)
+    )
 
 
 def build_device_url(config: dict[str, Any], device_id: str, override_url: str | None) -> str:
@@ -264,6 +305,7 @@ def main() -> None:
     config = load_config(args.config)
     device_id = args.device_id or config.get("device", {}).get("device_id", "virtual-box3-001")
     url = build_device_url(config, device_id, args.url)
+    apply_backend_language_settings(config, load_backend_language_settings(config, url))
     if args.tts:
         config.setdefault("tts", {})["enabled"] = True
     try:

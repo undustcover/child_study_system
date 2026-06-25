@@ -31,14 +31,14 @@ def receive_until(websocket, predicate, limit: int = 8) -> dict:
     raise AssertionError("expected websocket message was not received")
 
 
-def voice_message(command: str, text: str, timestamp: str) -> dict:
+def voice_message(command: str, text: str, timestamp: str, target_date: str = "2026-06-25") -> dict:
     return {
         "type": "voice_command",
         "device_id": "virtual-box3-001",
         "command": command,
         "text": text,
         "timestamp": timestamp,
-        "target_date": "2026-06-25",
+        "target_date": target_date,
     }
 
 
@@ -151,5 +151,106 @@ def test_stage8_p1a_end_to_end_acceptance_flow() -> None:
             assert reminder.status == ReminderEventStatus.CONSUMED
             assert dashboard["stats"]["completed_tasks"] == 1
             assert dashboard["current"]["task"]["title"] == "眼睛休息"
+        finally:
+            fastapi_app.dependency_overrides.clear()
+
+
+def test_query_today_plan_voice_command_pushes_speak_message() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            client.post(
+                "/api/calendar-plans",
+                json={
+                    "name": "今日计划播报测试",
+                    "start_date": "2026-06-25",
+                    "end_date": "2026-07-31",
+                    "repeat_rule": {"weekdays": [1, 2, 3, 4, 5]},
+                    "items": [
+                        {
+                            "sort_order": 1,
+                            "task_kind": "homework",
+                            "subject": "数学",
+                            "title": "数学作业",
+                            "planned_start_time": "09:00",
+                            "planned_end_time": "09:25",
+                            "planned_minutes": 25,
+                        },
+                        {
+                            "sort_order": 2,
+                            "task_kind": "break",
+                            "title": "眼睛休息",
+                            "planned_start_time": "09:25",
+                            "planned_end_time": "09:35",
+                            "planned_minutes": 10,
+                        },
+                    ],
+                },
+            )
+            client.post("/api/daily-tasks/generate?date=2026-06-25")
+
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+                websocket.send_json(
+                    {
+                        "type": "device_hello",
+                        "device_id": "virtual-box3-001",
+                        "device_type": "virtual_box_3",
+                        "firmware_version": "test-stage8-query",
+                    }
+                )
+                receive_until(websocket, lambda message: message.get("state") == "device_registered")
+                receive_until(websocket, lambda message: message.get("state") == "today_plan")
+
+                websocket.send_json(
+                    voice_message("QUERY_TODAY_PLAN", "播报本日计划", "2026-06-25T08:00:00")
+                )
+                display_state = receive_until(websocket, lambda message: message.get("type") == "display_state")
+                speak = receive_until(websocket, lambda message: message.get("type") == "speak")
+
+                assert display_state["state"] == "pending"
+                assert display_state["payload"]["command"] == "QUERY_TODAY_PLAN"
+                assert "数学作业" in speak["text"]
+                assert "眼睛休息" in speak["text"]
+        finally:
+            fastapi_app.dependency_overrides.clear()
+
+
+def test_query_today_plan_without_tasks_still_pushes_speak_message() -> None:
+    with make_session() as session:
+
+        def override_session():
+            return session
+
+        fastapi_app.dependency_overrides[get_session] = override_session
+        client = TestClient(fastapi_app)
+        try:
+            with client.websocket_connect("/ws/device/virtual-box3-001") as websocket:
+                assert websocket.receive_json()["state"] == "connected"
+                websocket.send_json(
+                    {
+                        "type": "device_hello",
+                        "device_id": "virtual-box3-001",
+                        "device_type": "virtual_box_3",
+                        "firmware_version": "test-stage8-empty",
+                    }
+                )
+                receive_until(websocket, lambda message: message.get("state") == "device_registered")
+                receive_until(websocket, lambda message: message.get("state") == "today_plan")
+
+                websocket.send_json(
+                    voice_message("QUERY_TODAY_PLAN", "今天安排", "2026-06-28T08:00:00", target_date="2026-06-28")
+                )
+                display_state = receive_until(websocket, lambda message: message.get("type") == "display_state")
+                speak = receive_until(websocket, lambda message: message.get("type") == "speak")
+
+                assert display_state["state"] == "idle"
+                assert display_state["payload"]["message"] == "no startable task found today"
+                assert speak["text"] == "6月28日还没有安排任务。"
         finally:
             fastapi_app.dependency_overrides.clear()

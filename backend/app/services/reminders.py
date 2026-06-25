@@ -5,6 +5,7 @@ from sqlmodel import Session, select
 from app.models.calendar import DailyTask
 from app.models.enums import DailyTaskStatus, ReminderEventStatus, ReminderEventType, TaskKind
 from app.models.reminder import ReminderEvent, ReminderSettings
+from app.services.language_settings import get_or_create_language_settings
 from app.services.speech_templates import render_reminder_text
 
 REMINDER_LOOKBACK_SECONDS = 60
@@ -37,11 +38,12 @@ def _create_event(
 ) -> ReminderEvent | None:
     if _existing_event(session, task.id, event_type, scheduled_at):
         return None
+    language_settings = get_or_create_language_settings(session)
     event = ReminderEvent(
         daily_task_id=task.id,
         event_type=event_type,
         scheduled_at=scheduled_at,
-        message_text=render_reminder_text(event_type, task, settings),
+        message_text=render_reminder_text(event_type, task, settings, language_settings),
     )
     session.add(event)
     return event

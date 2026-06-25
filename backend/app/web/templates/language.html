@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>语言自定义 - {{ app_name }}</title>
+    <style>
+      :root { color-scheme: light; font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif; background: #fff8f3; color: #241915; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: #fff8f3; }
+      h1, h2, h3, p { margin: 0; }
+      button, input, textarea { font-family: inherit; }
+      button { height: 36px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 6px; padding: 0 14px; font-size: 14px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+      textarea, input { width: 100%; border: 1px solid #ead8cc; border-radius: 6px; background: #fff; color: #241915; font-size: 14px; padding: 9px 10px; }
+      textarea { min-height: 68px; resize: vertical; line-height: 1.55; }
+      .primary { background: #d94f36; color: #fff; }
+      .secondary { background: #e8f1ed; color: #255345; }
+      .shell { min-height: 100vh; display: grid; grid-template-columns: 168px minmax(0, 1fr); }
+      .sidebar { background: #fff0e7; border-right: 1px solid #edd7c9; padding: 22px 14px; }
+      .brand { margin-bottom: 26px; color: #2e221c; }
+      .brand strong { display: block; font-size: 18px; line-height: 1.35; }
+      .brand span { display: block; margin-top: 6px; font-size: 12px; color: #7b6254; }
+      .nav { display: grid; gap: 8px; }
+      .nav a { height: 38px; display: flex; align-items: center; padding: 0 12px; border-radius: 6px; color: #725442; font-size: 14px; font-weight: 700; text-decoration: none; }
+      .nav a.active { background: #e85d3f; color: #fff; }
+      .main { min-width: 0; padding: 28px; }
+      .subtitle { margin-top: 6px; color: #755e52; font-size: 14px; line-height: 1.6; }
+      .tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 18px; }
+      .tabs button { background: #f1e2d7; color: #6e4d3c; }
+      .tabs button.active { background: #255345; color: #fff; }
+      .panel { margin-top: 16px; border: 1px solid #ead8cc; border-radius: 8px; background: #fff; padding: 16px; }
+      .panel h2 { margin-bottom: 6px; font-size: 18px; }
+      .hint { color: #7a6154; font-size: 13px; line-height: 1.55; }
+      .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+      .field { display: grid; gap: 6px; }
+      .field label { color: #725442; font-size: 13px; font-weight: 700; }
+      .field span { color: #8a6c5d; font-size: 12px; line-height: 1.45; }
+      .command-row { display: grid; grid-template-columns: 180px minmax(0, 1fr); gap: 10px; align-items: start; padding: 10px; border-radius: 7px; background: #fff8f3; }
+      .command-row strong { display: block; font-size: 13px; line-height: 1.45; color: #4d362b; }
+      .command-row small { display: block; margin-top: 4px; color: #826758; line-height: 1.4; }
+      .actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+      .status { min-height: 22px; margin-top: 8px; color: #755e52; font-size: 13px; line-height: 1.6; }
+      .preview { margin-top: 12px; border-radius: 7px; background: #eef3ef; padding: 12px; color: #255345; font-size: 13px; line-height: 1.6; }
+      .hidden { display: none; }
+      @media (max-width: 900px) { .shell, .grid { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); } .nav a { justify-content: center; } .command-row { grid-template-columns: 1fr; } }
+      @media (max-width: 640px) { .main { padding: 20px 14px; } .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <div class="brand"><strong>小朋友<br>学习安排</strong><span>{{ app_version }} · 本机免登录</span></div>
+        <nav class="nav" aria-label="主导航">
+          <a href="/">今日</a><a href="/plans">计划</a><a href="/devices">设备</a><a href="/stats">统计</a><a href="/corrections">纠错</a><a class="active" href="/language">语言</a>
+        </nav>
+      </aside>
+      <main class="main">
+        <h1>语言自定义</h1>
+        <p class="subtitle">维护播报文案、澄清提示、未识别回复和虚拟设备可识别的命令短语。</p>
+        <div class="tabs" id="tabs">
+          <button class="active" type="button" data-tab="today">今日计划</button>
+          <button type="button" data-tab="reminders">提醒模板</button>
+          <button type="button" data-tab="device">本地回复</button>
+          <button type="button" data-tab="commands">命令短语</button>
+        </div>
+        <form id="language-form">
+          <section class="panel" data-panel="today">
+            <h2>今日计划播报</h2>
+            <p class="hint">可用字段：{date_label}、{target_date}、{remaining_count}、{task_summaries}、{extra_suffix}、{extra_count}</p>
+            <div class="grid" id="today-fields"></div>
+          </section>
+          <section class="panel hidden" data-panel="reminders">
+            <h2>提醒模板</h2>
+            <p class="hint">可用字段：{task_name}、{title}、{subject}、{planned_minutes}、{pre_start_minutes}</p>
+            <div class="grid" id="reminder-fields"></div>
+          </section>
+          <section class="panel hidden" data-panel="device">
+            <h2>虚拟设备本地回复</h2>
+            <p class="hint">包含澄清提示语、未识别回复语、播报前缀和连接状态提示。</p>
+            <div class="grid" id="reply-fields"></div>
+          </section>
+          <section class="panel hidden" data-panel="commands">
+            <h2>命令短语</h2>
+            <p class="hint">每行一个短语。虚拟设备会优先使用这里的短语识别固定命令。</p>
+            <div class="grid" id="command-fields"></div>
+          </section>
+          <div class="actions">
+            <button class="primary" type="submit">保存语言设置</button>
+            <button class="secondary" type="button" id="reset">恢复默认文案</button>
+            <button class="secondary" type="button" id="reload">重新读取</button>
+          </div>
+          <div class="status" id="status"></div>
+          <div class="preview" id="preview">正在读取语言设置...</div>
+        </form>
+      </main>
+    </div>
+    <script>
+      const labels = {
+        today_plan_templates: {
+          empty: "无任务文案",
+          completed: "全部完成文案",
+          single: "剩余一项文案",
+          multiple: "剩余多项文案",
+          extra_suffix: "超过三项补充"
+        },
+        reminder_templates: {
+          pre_start: "提前提醒",
+          start_due: "开始提醒",
+          start_due_break: "休息开始",
+          delayed_start: "延迟未开始",
+          finish_confirm: "完成确认",
+          break_end: "休息结束"
+        },
+        virtual_reply_templates: {
+          prompt: "输入提示",
+          command_sent: "命令已发送",
+          clarify: "澄清提示",
+          clarify_retry: "澄清重试",
+          clarify_abandoned: "放弃澄清",
+          unrecognized: "未识别回复",
+          negated: "否定回复",
+          speak_prefix: "播报前缀",
+          display_state_prefix: "状态前缀",
+          sync_state_prefix: "同步前缀",
+          playback_finished: "播报完成",
+          startup_query_sent: "启动查询",
+          disconnect_requested: "断开连接",
+          connection_opened: "连接成功",
+          connection_closed: "连接关闭",
+          llm_placeholder: "LLM预留"
+        }
+      };
+      const commandLabels = {
+        START_STUDY: "开始学习",
+        PAUSE_STUDY: "暂停学习",
+        RESUME_STUDY: "继续学习",
+        COMPLETE_STUDY: "完成学习",
+        SKIP_TASK: "跳过任务",
+        QUERY_CURRENT_TASK: "查询当前任务",
+        QUERY_TODAY_PLAN: "查询今天计划",
+        EXTEND_CURRENT_TASK: "延长学习时间",
+        EXTEND_BREAK: "延长休息时间"
+      };
+      let settings = null;
+
+      function esc(v) { return String(v ?? "").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;"); }
+      function setStatus(text) { document.querySelector("#status").textContent = text; }
+      async function api(path, options = {}) {
+        const response = await fetch(path, { headers: { "Content-Type": "application/json", ...(options.headers || {}) }, ...options });
+        if (!response.ok) {
+          const body = await response.json().catch(() => ({}));
+          throw new Error(body.detail || `HTTP ${response.status}`);
+        }
+        return response.json();
+      }
+
+      function renderTextFields(containerId, group, rows = 3) {
+        const container = document.querySelector(containerId);
+        container.innerHTML = Object.entries(settings[group]).map(([key, value]) => `
+          <div class="field">
+            <label for="${group}-${key}">${esc(labels[group][key] || key)}</label>
+            <textarea id="${group}-${key}" data-group="${group}" data-key="${key}" rows="${rows}">${esc(value)}</textarea>
+          </div>
+        `).join("");
+      }
+
+      function renderCommands() {
+        document.querySelector("#command-fields").innerHTML = Object.entries(settings.command_phrases).map(([command, phrases]) => `
+          <div class="command-row">
+            <div><strong>${esc(settings.command_labels[command] || commandLabels[command] || command)}</strong><small>${esc(command)}</small></div>
+            <textarea data-command="${command}" rows="4">${esc(phrases.join("\n"))}</textarea>
+          </div>
+        `).join("");
+      }
+
+      function renderAll() {
+        renderTextFields("#today-fields", "today_plan_templates", 2);
+        renderTextFields("#reminder-fields", "reminder_templates", 2);
+        renderTextFields("#reply-fields", "virtual_reply_templates", 2);
+        renderCommands();
+        document.querySelector("#preview").textContent = settings.today_plan_templates.multiple
+          .replaceAll("{date_label}", "今天")
+          .replaceAll("{remaining_count}", "2")
+          .replaceAll("{task_summaries}", "19:00到19:40数学作业，类型是作业，计划40分钟")
+          .replaceAll("{extra_suffix}", "");
+      }
+
+      function collectSettings() {
+        const payload = {
+          today_plan_templates: {},
+          reminder_templates: {},
+          virtual_reply_templates: {},
+          command_phrases: {},
+          command_labels: settings.command_labels
+        };
+        document.querySelectorAll("textarea[data-group]").forEach((input) => {
+          payload[input.dataset.group][input.dataset.key] = input.value.trim();
+        });
+        document.querySelectorAll("textarea[data-command]").forEach((input) => {
+          payload.command_phrases[input.dataset.command] = input.value.split(/\r?\n/).map(v => v.trim()).filter(Boolean);
+        });
+        return payload;
+      }
+
+      async function loadSettings() {
+        settings = await api("/api/language-settings");
+        renderAll();
+        setStatus("语言设置已读取。");
+      }
+
+      document.querySelector("#tabs").addEventListener("click", (event) => {
+        const tab = event.target.closest("button[data-tab]");
+        if (!tab) return;
+        document.querySelectorAll("#tabs button").forEach(button => button.classList.toggle("active", button === tab));
+        document.querySelectorAll("[data-panel]").forEach(panel => panel.classList.toggle("hidden", panel.dataset.panel !== tab.dataset.tab));
+      });
+
+      document.querySelector("#language-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        try {
+          settings = await api("/api/language-settings", { method: "PUT", body: JSON.stringify(collectSettings()) });
+          renderAll();
+          setStatus("语言设置已保存。");
+        } catch (error) {
+          setStatus(`保存失败：${error.message}`);
+        }
+      });
+      document.querySelector("#reload").addEventListener("click", () => loadSettings().catch(error => setStatus(`读取失败：${error.message}`)));
+      document.querySelector("#reset").addEventListener("click", async () => {
+        settings = await api("/api/language-settings/reset", { method: "POST", body: "{}" });
+        renderAll();
+        setStatus("已恢复默认文案。");
+      });
+
+      loadSettings().catch(error => setStatus(`读取失败：${error.message}`));
+    </script>
+  </body>
+</html>

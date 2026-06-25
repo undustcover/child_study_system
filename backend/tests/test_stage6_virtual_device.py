@@ -8,10 +8,12 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from intent_parser import ControlledIntentParser, ParseAction  # noqa: E402
 from virtual_device import (  # noqa: E402
+    apply_backend_language_settings,
     build_hello,
     build_startup_query_command,
     build_voice_command,
     is_disconnect_phrase,
+    load_backend_language_settings,
     render_template,
     render_parser_feedback,
 )
@@ -129,6 +131,16 @@ def test_startup_query_uses_formal_device_voice_protocol() -> None:
     assert payload["text"] == "启动后自动查询今日计划"
 
 
+def test_broadcast_today_plan_phrase_maps_to_query_today_plan() -> None:
+    config = load_virtual_config()
+    parser = ControlledIntentParser(config)
+
+    result = parser.parse("播报本日计划")
+
+    assert result.action == ParseAction.COMMAND
+    assert result.command == "QUERY_TODAY_PLAN"
+
+
 def test_disconnect_phrase_can_simulate_device_offline() -> None:
     config = load_virtual_config()
 
@@ -170,3 +182,28 @@ def test_virtual_device_hello_uses_configured_box3_identity() -> None:
         "device_type": "virtual_box_3",
         "firmware_version": "virtual-0.1.0",
     }
+
+
+def test_backend_language_settings_can_override_virtual_device_language_fields() -> None:
+    config = load_virtual_config()
+    apply_backend_language_settings(
+        config,
+        {
+            "virtual_reply_templates": {"unrecognized": "请再说一次。"},
+            "command_labels": {"QUERY_TODAY_PLAN": "今日播报"},
+            "command_phrases": {"QUERY_TODAY_PLAN": ["今日播报"]},
+        },
+    )
+
+    parser = ControlledIntentParser(config)
+    result = parser.parse("今日播报")
+
+    assert result.action == ParseAction.COMMAND
+    assert result.command == "QUERY_TODAY_PLAN"
+    assert render_parser_feedback(config, parser.parse("???")) == "请再说一次。"
+
+
+def test_backend_language_settings_sync_can_be_disabled() -> None:
+    config = {"language": {"sync_from_backend": False}}
+
+    assert load_backend_language_settings(config, "ws://localhost:8000/ws/device/x") is None

@@ -10,8 +10,10 @@ from app.api.calendar_plans import router as calendar_plans_router
 from app.api.commands import router as commands_router
 from app.api.dashboard import router as dashboard_router
 from app.api.daily_tasks import router as daily_tasks_router
+from app.api.devices import router as devices_router
 from app.api.device_ws import router as device_ws_router
 from app.api.holidays import router as holidays_router
+from app.api.language_settings import router as language_settings_router
 from app.api.reminders import router as reminders_router
 from app.core.database import init_db
 
@@ -32,8 +34,10 @@ def create_app() -> FastAPI:
     app.include_router(commands_router, prefix="/api")
     app.include_router(dashboard_router, prefix="/api")
     app.include_router(daily_tasks_router, prefix="/api")
+    app.include_router(devices_router, prefix="/api")
     app.include_router(device_ws_router)
     app.include_router(holidays_router, prefix="/api")
+    app.include_router(language_settings_router, prefix="/api")
     app.include_router(reminders_router, prefix="/api")
 
     @app.get("/", response_class=HTMLResponse)
@@ -84,6 +88,17 @@ def create_app() -> FastAPI:
     async def corrections(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(
             "corrections.html",
+            {
+                "request": request,
+                "app_name": settings.app_name,
+                "app_version": settings.app_version,
+            },
+        )
+
+    @app.get("/language", response_class=HTMLResponse)
+    async def language(request: Request) -> HTMLResponse:
+        return templates.TemplateResponse(
+            "language.html",
             {
                 "request": request,
                 "app_name": settings.app_name,

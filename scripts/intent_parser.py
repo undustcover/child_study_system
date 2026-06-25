@@ -58,8 +58,10 @@ class ControlledIntentParser:
         llm_provider: LLMIntentProvider | None = None,
     ) -> None:
         parser_config = config.get("intent_parser", config)
+        language_config = config.get("language", {})
+        configured_phrases = language_config.get("command_phrases", {})
         self.commands: dict[str, list[str]] = {
-            command: list(details.get("phrases", []))
+            command: list(configured_phrases.get(command) or details.get("phrases", []))
             for command, details in parser_config.get("commands", {}).items()
         }
         self.negation_words: list[str] = list(parser_config.get("negation_words", []))

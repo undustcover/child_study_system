@@ -347,8 +347,9 @@ def _query_current_task(session: Session, request: CommandRequest) -> CommandRes
 
 
 def _query_today_plan(session: Session, request: CommandRequest) -> CommandResult:
-    task = _select_next_task(session, request.target_date)
-    return _result(request.command, task, None, "next task found" if task else "no startable task found")
+    target_date = request.target_date or dt.date.today()
+    task = _select_next_task(session, target_date)
+    return _result(request.command, task, None, "today plan found" if task else "no startable task found today")
 
 
 def mark_due_tasks_waiting_finish_confirm(session: Session, when: dt.datetime) -> list[DailyTask]:

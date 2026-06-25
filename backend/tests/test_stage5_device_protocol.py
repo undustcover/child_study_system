@@ -13,6 +13,7 @@ from app.schemas.calendar import SchedulePlanCreate, ScheduleTaskItemCreate
 from app.services.calendar_plans import create_schedule_plan
 from app.services.daily_tasks import generate_daily_tasks, list_daily_tasks
 from app.services.devices import (
+    build_today_plan_speak_text,
     build_today_plan_payload,
     handle_device_voice_command,
     mark_device_disconnected,
@@ -141,6 +142,24 @@ def test_today_plan_payload_can_be_synced_to_device_for_offline_reminders() -> N
         assert [task["title"] for task in payload["tasks"]] == ["homework"]
         assert device.last_plan_sync_date == date(2026, 7, 1)
         assert device.last_plan_sync_at == datetime(2026, 7, 1, 6, 0)
+
+
+def test_today_plan_speak_text_summarizes_remaining_tasks() -> None:
+    with make_session() as session:
+        make_daily_task(session)
+
+        text = build_today_plan_speak_text(session, date(2026, 7, 1))
+
+        assert "还有1项安排" in text
+        assert "19:00到19:40" in text
+        assert "homework" in text
+
+
+def test_today_plan_speak_text_handles_empty_plan() -> None:
+    with make_session() as session:
+        text = build_today_plan_speak_text(session, date(2026, 7, 2))
+
+        assert text == "7月2日还没有安排任务。"
 
 
 def test_device_websocket_route_is_registered() -> None:

@@ -29,7 +29,7 @@
       .row { border-radius: 7px; background: #f8eadf; padding: 12px; margin-top: 10px; }
       .row strong { display: block; font-size: 15px; }
       .empty { border-radius: 7px; background: #fff8f3; color: #765f53; padding: 14px; font-size: 14px; line-height: 1.6; }
-      @media (max-width: 900px) { .shell, .stats { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(5, minmax(0, 1fr)); } .nav a { justify-content: center; } }
+      @media (max-width: 900px) { .shell, .stats { grid-template-columns: 1fr; } .sidebar { border-right: 0; border-bottom: 1px solid #edd7c9; } .nav { grid-template-columns: repeat(3, minmax(0, 1fr)); } .nav a { justify-content: center; } }
       @media (max-width: 640px) { .main { padding: 20px 14px; } .nav { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
     </style>
   </head>
@@ -38,7 +38,7 @@
       <aside class="sidebar">
         <div class="brand"><strong>小朋友<br>学习安排</strong><span>{{ app_version }} · 本机免登录</span></div>
         <nav class="nav" aria-label="主导航">
-          <a href="/">今日</a><a href="/plans">计划</a><a href="/devices">设备</a><a class="active" href="/stats">统计</a><a href="/corrections">纠错</a>
+          <a href="/">今日</a><a href="/plans">计划</a><a href="/devices">设备</a><a class="active" href="/stats">统计</a><a href="/corrections">纠错</a><a href="/language">语言</a>
         </nav>
       </aside>
       <main class="main">
